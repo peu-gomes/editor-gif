@@ -1,5 +1,6 @@
 // ---------- linha do tempo ----------
-function dur(f) { return Math.max(1, g.frames[f.i].delay) * 10; }
+// Chrome e Firefox tocam atraso 0 ou 1 (centésimos de s) a 100 ms; a prévia e o total seguem isso
+function dur(f) { const d = g.frames[f.i].delay; return d <= 1 ? 100 : d * 10; }
 // "Em quais frames aplicar" acompanha a marcação: nada marcado = todos; 1 marcado = só o atual; 2 ou mais = só os marcados.
 // (A pessoa pode trocar à mão; volta a acompanhar quando a marcação muda.)
 let built = [], lastSel = new Set();

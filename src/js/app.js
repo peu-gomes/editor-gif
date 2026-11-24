@@ -51,7 +51,7 @@ window.addEventListener('keydown', e => {
     e.preventDefault(); const s = e.shiftKey ? 10 : 1;
     nudge(k === 'ArrowLeft' ? -s : k === 'ArrowRight' ? s : 0, k === 'ArrowUp' ? -s : k === 'ArrowDown' ? s : 0);
   }
-  else if (k === 'Delete' || k === 'Backspace') { e.preventDefault(); sel.size ? doDel() : removeFrames(new Set([cur])); }
+  else if (k === 'Delete') { e.preventDefault(); sel.size ? doDel() : removeFrames(new Set([cur])); }
   else if (k === 'Enter') { if (t.tagName === 'BUTTON') return; e.preventDefault(); if (tab === 'blur') doBlur(); }   // na aba "Apagar frames" a área do borrão está escondida: não borra às cegas
   else if (K === 'b') { if (tab === 'blur') doBlur(); }
   else if (K === 'u') { if (tab === 'blur') doUnblur(); }

@@ -80,6 +80,7 @@ async function finishRecording(r) {
   r.stream.getTracks().forEach(t => t.stop()); recUI(''); document.title = baseTitle;
   const secs = r.t0 ? (performance.now() - r.t0) / 1000 : 0;
   if (r.discard) { say('Gravação descartada. Nenhum arquivo foi criado.'); return; }
+  if (!r.t0) { say('Gravação cancelada antes de começar. Nenhum arquivo foi criado.'); return; }   // parou durante a contagem
   if (!r.chunks.length || secs < 0.5) { showResult('A gravação ficou muito curta', ['Não deu para aproveitar. Grave por pelo menos 1 segundo.', 'Nenhum arquivo foi criado.'], 'warn'); return; }
   const d = new Date(), p2 = n => String(n).padStart(2, '0');
   const mime = /mp4/.test(r.type) ? 'video/mp4' : 'video/webm';

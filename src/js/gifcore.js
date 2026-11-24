@@ -87,36 +87,6 @@ function frameIndices(g, f) {
   return idx;
 }
 
-// Retorna um array de RGBA completos (frame já composto) por frame.
-function composeFrames(g, onProgress) {
-  const { W, H } = g;
-  let canvas = new Uint8ClampedArray(W * H * 4), backup = null;
-  const snaps = [];
-  g.frames.forEach((f, n) => {
-    if (f.disposal === 3) backup = canvas.slice();
-    const idx = frameIndices(g, f), pal = f.lct || g.gct;
-    if (pal) {
-      for (let yy = 0; yy < f.h; yy++) {
-        const cy = f.y + yy; if (cy >= H) break;
-        for (let xx = 0; xx < f.w; xx++) {
-          const cx = f.x + xx; if (cx >= W) break;
-          const v = idx[yy * f.w + xx];
-          if (v === f.transp || v * 3 + 2 >= pal.length) continue;
-          const o = (cy * W + cx) * 4;
-          canvas[o] = pal[v * 3]; canvas[o + 1] = pal[v * 3 + 1]; canvas[o + 2] = pal[v * 3 + 2]; canvas[o + 3] = 255;
-        }
-      }
-    }
-    snaps.push(canvas.slice());
-    if (f.disposal === 2) {
-      for (let yy = f.y; yy < Math.min(H, f.y + f.h); yy++)
-        canvas.fill(0, (yy * W + f.x) * 4, (yy * W + Math.min(W, f.x + f.w)) * 4);
-    } else if (f.disposal === 3 && backup) canvas = backup;
-    if (onProgress) onProgress(n + 1, g.frames.length);
-  });
-  return snaps;
-}
-
 // Remonta os frames compostos SOB DEMANDA, sem guardar todos na memória.
 // Guarda só alguns "pontos de retomada" (estado do quadro antes de desenhar o frame k) e uma pequena lista de frames recentes.
 // Assim a memória fica quase fixa, mesmo com milhares de frames.
@@ -245,27 +215,6 @@ function quantizeCore(rgba, maxColors) {
     idx[i] = rgba[o + 3] < 128 ? -1 : lut[((rgba[o] >> 3) << 10) | ((rgba[o + 1] >> 3) << 5) | (rgba[o + 2] >> 3)];
   }
   return { pal, count: boxes.length, idx, transp };
-}
-
-function quantize(rgba) {
-  let q = exactPalette(rgba, 256);
-  if (q) {
-    let tr = false;
-    for (let i = 0; i < q.idx.length; i++) if (q.idx[i] < 0) { tr = true; break; }
-    if (tr && q.count > 255) q = null; else q.transp = tr;
-  }
-  if (!q) {
-    q = quantizeCore(rgba, 256);
-    if (q.transp && q.count > 255) q = quantizeCore(rgba, 255);
-  }
-  let count = q.count, tIdx = -1;
-  if (q.transp) tIdx = count++;
-  if (count < 1) count = 1;
-  let bits = 1; while ((1 << bits) < count) bits++;
-  const pal = new Uint8Array((1 << bits) * 3); pal.set(q.pal);
-  const idx = new Uint8Array(q.idx.length);
-  for (let i = 0; i < idx.length; i++) idx[i] = q.idx[i] < 0 ? tIdx : q.idx[i];
-  return { pal, idx, bits, tIdx };
 }
 
 // ---------- LZW encode ----------
@@ -508,7 +457,7 @@ async function buildGIF(g, kept, opts) {
   return { bytes: out, raw: rawN, re: reN };
 }
 
-const api = { parseGIF, composeFrames, makeComposer, blurRegion, applyBlurs, quantize, lzwEncode, lzwDecode, frameIndices, buildGIF };
+const api = { parseGIF, makeComposer, blurRegion, applyBlurs, lzwEncode, lzwDecode, frameIndices, buildGIF };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GifCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
 

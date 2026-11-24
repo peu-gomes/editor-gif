@@ -2,7 +2,7 @@ const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d'), strip = $('strip');
 let g = null, comp = null, srcBytes = null, srcName = 'gif', frames = [], sel = new Set(), cur = null, anchor = null;
 let rect = null, drag = null, live = null, undoSt = [], redoSt = [], playing = null, tdrag = null;
-let suppressClick = false, msgT = 0, loading = false, dirty = false, tab = 'blur', cancelled = false, fromVideo = false;
+let savedSize = 0, suppressClick = false, msgT = 0, loading = false, dirty = false, tab = 'blur', cancelled = false, fromVideo = false;
 const tmp = document.createElement('canvas'), tctx = tmp.getContext('2d');
 
 const pl = (n, s, p) => n + ' ' + (n === 1 ? s : p);

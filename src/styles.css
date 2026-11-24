@@ -72,6 +72,7 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
   background: repeating-conic-gradient(#cfd4dc 0 25%, #e6e9ef 0 50%) 0 0/16px 16px; }
 #player { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 #fi { font-variant-numeric: tabular-nums; min-width: 12ch; }
+#ginfo { font-variant-numeric: tabular-nums; }
 .spd { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
 #tools { grid-area: tools; min-height: 0; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }

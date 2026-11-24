@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-XGgK8Pf473UudJEbRoFlMU+RQmFPFPmDFtkjSxdSemM='; style-src 'sha256-K6K20oAvpBwLgQ9RZ4RE9dTFhQdgJHYokioZ7GvqnhU='; img-src blob: data:; media-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-78vov+lZCpCRYfU9ByeDmYy6ttnBgicEQ8ecgTDTpHM='; style-src 'sha256-r9xxccH4BpbmgNPwKjOsl3ApBTO9MDvdto59+wYMTUo='; img-src blob: data:; media-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Central de Ajuda · Editor de GIF v1.3.3</title>
+<title>Central de Ajuda · Editor de GIF v1.4.0</title>
 <style>:root {
   color-scheme: light;
   --bg: #f3f5f9; --panel: #ffffff; --line: #d3d9e4; --fg: #1c2433; --dim: #5a6577;
@@ -80,6 +80,7 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
   background: repeating-conic-gradient(#cfd4dc 0 25%, #e6e9ef 0 50%) 0 0/16px 16px; }
 #player { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 #fi { font-variant-numeric: tabular-nums; min-width: 12ch; }
+#ginfo { font-variant-numeric: tabular-nums; }
 .spd { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
 #tools { grid-area: tools; min-height: 0; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
@@ -279,7 +280,7 @@ dialog td:first-child { white-space: nowrap; }
 <input type="file" id="file" accept="image/gif,.gif,video/*,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
 
 <header id="top">
-  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v1.3.3</span><span class="priv">Seu arquivo fica só neste computador</span></div>
+  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v1.4.0</span><span class="priv">Seu arquivo fica só neste computador</span></div>
   <div class="top-actions">
     <button id="recAgain" class="btn recbtn" hidden><span class="reddot" aria-hidden="true">●</span> Gravar a tela</button>
     <button id="openAgain" class="btn" hidden>Abrir outro GIF</button>
@@ -320,7 +321,7 @@ dialog td:first-child { white-space: nowrap; }
       <li><b>Gravar a tela</b> e editar o resultado na hora</li>
       <li><b>Salvar</b> o resultado, sem mexer no arquivo original</li>
     </ul>
-    <p class="dim small verwelcome">Editor de GIF · versão 1.3.3</p>
+    <p class="dim small verwelcome">Editor de GIF · versão 1.4.0</p>
   </div>
 </main>
 
@@ -338,6 +339,7 @@ dialog td:first-child { white-space: nowrap; }
         <select id="spd"><option value="0.5">Devagar</option><option value="1" selected>Normal</option><option value="2">Rápido</option></select>
       </label>
     </div>
+    <p id="ginfo" class="dim small" aria-label="Informações do GIF"></p>
   </section>
 
   <aside id="tools" aria-label="Ferramentas">
@@ -480,7 +482,7 @@ dialog td:first-child { white-space: nowrap; }
     <tr><td><kbd>Alt</kbd> + setas</td><td>mover a área marcada (com <kbd>Shift</kbd> anda de 10 em 10)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>limpar marcações</td></tr>
   </table>
-  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão 1.3.3</span><button id="helpx" class="btn pri">Entendi</button></p>
+  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão 1.4.0</span><button id="helpx" class="btn pri">Entendi</button></p>
 </dialog>
 
 <script>(function (root) {
@@ -1120,7 +1122,7 @@ const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d'), strip = $('strip');
 let g = null, comp = null, srcBytes = null, srcName = 'gif', frames = [], sel = new Set(), cur = null, anchor = null;
 let rect = null, drag = null, live = null, undoSt = [], redoSt = [], playing = null, tdrag = null;
-let suppressClick = false, msgT = 0, loading = false, dirty = false, tab = 'blur', cancelled = false, fromVideo = false;
+let savedSize = 0, suppressClick = false, msgT = 0, loading = false, dirty = false, tab = 'blur', cancelled = false, fromVideo = false;
 const tmp = document.createElement('canvas'), tctx = tmp.getContext('2d');
 
 const pl = (n, s, p) => n + ' ' + (n === 1 ? s : p);
@@ -1209,6 +1211,14 @@ function draw() {
     }
   }
 }
+// resolução, fps, frames, duração e tamanho do GIF que está aberto (acompanha as edições)
+function infoText() {
+  const n = frames.length, ms = frames.reduce((a, f) => a + dur(f), 0);
+  const fps = ms ? n / (ms / 1000) : 0, f1 = v => v.toFixed(1).replace('.', ',').replace(/,0$/, '');
+  let t = `${g.W} × ${g.H} px · ${f1(fps)} fps · ${pl(n, 'frame', 'frames')} · ${fmt(ms)} · ${fromVideo ? 'convertido' : 'original'}: ${kb(srcBytes.length)}`;
+  if (savedSize && !dirty) t += ` · salvo: ${kb(savedSize)}`;
+  return t;
+}
 function hintText() {
   if (tab === 'blur') {
     if (!rect) return 'Arraste sobre a imagem para marcar o dado que você quer borrar (CNPJ, CPF, nome…).';
@@ -1221,7 +1231,7 @@ function updateUI() {
   $('welcome').hidden = has; $('editor').hidden = !has; $('bottom').hidden = !has; $('openAgain').hidden = !has; $('recAgain').hidden = !has;
   $('dirty').hidden = !(has && dirty);
   if (!has) return;
-  $('hint').textContent = hintText();
+  $('hint').textContent = hintText(); $('ginfo').textContent = infoText();
   $('undo').disabled = !undoSt.length; $('redo').disabled = !redoSt.length;
   $('prev').disabled = i < 1; $('next').disabled = i >= n - 1;
   $('blur').disabled = !rect; $('rinfo').textContent = rect ? `Área: ${Math.round(rect.w)} × ${Math.round(rect.h)}` : 'Nenhuma área marcada';
@@ -1398,7 +1408,7 @@ async function openBytes(bytes, name, isConv) {
     tctx.putImageData(new ImageData(rgba, W, H), 0, 0);
     const th = list[n].th; th.getContext('2d').drawImage(tmp, 0, 0, th.width, th.height);
   }, async (d, t) => { progress(d / t, `Preparando ${d} de ${t} frames`); await sleep(0); });
-  playing && togglePlay();
+  playing && togglePlay(); savedSize = 0;
   srcBytes = bytes; g = ng; comp = c; srcName = baseName(name); fromVideo = !!isConv;
   cv.width = W; cv.height = H;
   frames = list; undoSt = []; redoSt = []; sel = new Set(); cur = frames[0]; anchor = cur; rect = null; live = null; dirty = !!isConv;
@@ -1782,7 +1792,7 @@ async function doExport() {
         mergeDelay: $('merge').checked, blurColors: +q[0], blurTol: +q[1], getSnap: i => comp.at(i),
         tick: async (j, t) => { progress(j / t, `Frame ${j} de ${t}`); await sleep(0); }
       });
-      saveGif(r.bytes, name); dirty = false;
+      saveGif(r.bytes, name); dirty = false; savedSize = r.bytes.length;
       say(`Pronto! Salvei “${name}” (${kb(srcBytes.length)} → ${kb(r.bytes.length)}). Procure na pasta de downloads.`, 'ok');
     } catch (err) { say('Não consegui salvar o GIF. (' + err.message + ')', 'err'); return false; }
   }, 'GIF salvo!');

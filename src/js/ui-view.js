@@ -45,6 +45,14 @@ function draw() {
     }
   }
 }
+// resolução, fps, frames, duração e tamanho do GIF que está aberto (acompanha as edições)
+function infoText() {
+  const n = frames.length, ms = frames.reduce((a, f) => a + dur(f), 0);
+  const fps = ms ? n / (ms / 1000) : 0, f1 = v => v.toFixed(1).replace('.', ',').replace(/,0$/, '');
+  let t = `${g.W} × ${g.H} px · ${f1(fps)} fps · ${pl(n, 'frame', 'frames')} · ${fmt(ms)} · ${fromVideo ? 'convertido' : 'original'}: ${kb(srcBytes.length)}`;
+  if (savedSize && !dirty) t += ` · salvo: ${kb(savedSize)}`;
+  return t;
+}
 function hintText() {
   if (tab === 'blur') {
     if (!rect) return 'Arraste sobre a imagem para marcar o dado que você quer borrar (CNPJ, CPF, nome…).';
@@ -57,7 +65,7 @@ function updateUI() {
   $('welcome').hidden = has; $('editor').hidden = !has; $('bottom').hidden = !has; $('openAgain').hidden = !has; $('recAgain').hidden = !has;
   $('dirty').hidden = !(has && dirty);
   if (!has) return;
-  $('hint').textContent = hintText();
+  $('hint').textContent = hintText(); $('ginfo').textContent = infoText();
   $('undo').disabled = !undoSt.length; $('redo').disabled = !redoSt.length;
   $('prev').disabled = i < 1; $('next').disabled = i >= n - 1;
   $('blur').disabled = !rect; $('rinfo').textContent = rect ? `Área: ${Math.round(rect.w)} × ${Math.round(rect.h)}` : 'Nenhuma área marcada';

@@ -34,7 +34,7 @@ async function openBytes(bytes, name, isConv) {
     tctx.putImageData(new ImageData(rgba, W, H), 0, 0);
     const th = list[n].th; th.getContext('2d').drawImage(tmp, 0, 0, th.width, th.height);
   }, async (d, t) => { progress(d / t, `Preparando ${d} de ${t} frames`); await sleep(0); });
-  playing && togglePlay();
+  playing && togglePlay(); savedSize = 0;
   srcBytes = bytes; g = ng; comp = c; srcName = baseName(name); fromVideo = !!isConv;
   cv.width = W; cv.height = H;
   frames = list; undoSt = []; redoSt = []; sel = new Set(); cur = frames[0]; anchor = cur; rect = null; live = null; dirty = !!isConv;

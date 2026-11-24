@@ -124,7 +124,7 @@ async function doExport() {
         mergeDelay: $('merge').checked, blurColors: +q[0], blurTol: +q[1], getSnap: i => comp.at(i),
         tick: async (j, t) => { progress(j / t, `Frame ${j} de ${t}`); await sleep(0); }
       });
-      saveGif(r.bytes, name); dirty = false;
+      saveGif(r.bytes, name); dirty = false; savedSize = r.bytes.length;
       say(`Pronto! Salvei “${name}” (${kb(srcBytes.length)} → ${kb(r.bytes.length)}). Procure na pasta de downloads.`, 'ok');
     } catch (err) { say('Não consegui salvar o GIF. (' + err.message + ')', 'err'); return false; }
   }, 'GIF salvo!');

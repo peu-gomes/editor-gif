@@ -1,0 +1,11 @@
+gifcore
+videogif
+ui-core
+ui-view
+ui-timeline
+ui-files
+recorder
+file-input
+ui-canvas
+actions
+app

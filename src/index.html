@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{{CSP}}
+<meta name="referrer" content="no-referrer">
+<title>Central de Ajuda · Editor de GIF v{{VERSION}}</title>
+<style>{{STYLE}}</style>
+</head>
+<body>
+<input type="file" id="file" accept="image/gif,.gif,video/*,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
+
+<header id="top">
+  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v{{VERSION}}</span><span class="priv">Seu arquivo fica só neste computador</span></div>
+  <div class="top-actions">
+    <button id="recAgain" class="btn recbtn" hidden><span class="reddot" aria-hidden="true">●</span> Gravar a tela</button>
+    <button id="openAgain" class="btn" hidden>Abrir outro GIF</button>
+    <button id="helpb" class="btn">Como usar</button>
+  </div>
+</header>
+
+<!-- TELA INICIAL -->
+<main id="welcome">
+  <div class="card">
+    <p id="wmsg" role="status" hidden></p>
+    <h2>Vamos começar</h2>
+    <p class="lead">Escolha um <b>GIF</b> para editar ou um <b>vídeo</b> (MP4, WebM) para transformar em GIF.</p>
+    <button id="pick" class="btn pri big">Escolher arquivo no computador</button>
+    <p class="or">ou arraste o arquivo (GIF ou vídeo) e solte aqui</p>
+    <div class="recbox">
+      <button id="recStart" class="btn big recbtn"><span class="reddot" aria-hidden="true">●</span> Gravar a tela</button>
+      <p class="dim small">Grava a tela, uma janela ou uma aba e já abre no editor, para borrar e cortar. Sem som, até 5 minutos.</p>
+    </div>
+    <details class="convopts">
+      <summary>Opções para vídeos</summary>
+      <p class="dim small">O vídeo vira GIF automaticamente. Se o vídeo já for menor que isso, ele é mantido como está (nunca aumenta).</p>
+      <label class="opt">Largura máxima do GIF
+        <select id="cvW"><option value="1280" selected>1280 px (padrão)</option><option value="1024">1024 px</option><option value="854">854 px</option><option value="640">640 px (arquivo bem menor)</option></select>
+      </label>
+      <label class="opt">Frames por segundo
+        <select id="cvFps"><option value="15" selected>15 (padrão)</option><option value="12">12</option><option value="10">10 (arquivo menor)</option><option value="8">8 (arquivo bem menor)</option></select>
+      </label>
+      <label class="opt">Qualidade e tamanho do arquivo
+        <select id="cvQ"><option value="4">Máxima qualidade (arquivo maior)</option><option value="12" selected>Equilibrado (padrão)</option><option value="24">Menor tamanho</option></select>
+      </label>
+      <p class="dim small">Para escolher vários vídeos de uma vez, selecione todos na janela de escolha: cada um é convertido e baixado como um GIF.</p>
+    </details>
+    <ul class="can">
+      <li><b>Borrar dados pessoais</b> (CNPJ, CPF, nomes, e-mails…) para não aparecerem em artigos</li>
+      <li><b>Apagar frames</b> do GIF que você não quer</li>
+      <li><b>Converter vídeo em GIF</b> (até 1280 px, 15 fps, 256 cores) com o menor tamanho possível</li>
+      <li><b>Gravar a tela</b> e editar o resultado na hora</li>
+      <li><b>Salvar</b> o resultado, sem mexer no arquivo original</li>
+    </ul>
+    <p class="dim small verwelcome">Editor de GIF · versão {{VERSION}}</p>
+  </div>
+</main>
+
+<!-- TELA DE EDIÇÃO -->
+<main id="editor" hidden>
+  <section id="viewer" aria-label="Visualização">
+    <p id="hint" class="hint"></p>
+    <div id="stage"><canvas id="cv" width="10" height="10"></canvas></div>
+    <div id="player">
+      <button id="prev" class="btn" title="Frame anterior">◀ Anterior</button>
+      <button id="play" class="btn">▶ Assistir</button>
+      <button id="next" class="btn" title="Próximo frame">Próximo ▶</button>
+      <span id="fi" class="dim"></span>
+      <label class="spd dim">Velocidade
+        <select id="spd"><option value="0.5">Devagar</option><option value="1" selected>Normal</option><option value="2">Rápido</option></select>
+      </label>
+    </div>
+  </section>
+
+  <aside id="tools" aria-label="Ferramentas">
+    <p class="q">O que você quer fazer?</p>
+    <div id="tabs" role="tablist">
+      <button id="tabBlur" class="tab on" role="tab" aria-selected="true">Borrar dados pessoais</button>
+      <button id="tabCut" class="tab" role="tab" aria-selected="false">Apagar frames</button>
+    </div>
+
+    <div id="panelBlur" role="tabpanel">
+      <p class="step"><span class="n">1</span>Desenhe, sobre a imagem, um retângulo em cima do dado que você quer borrar (CNPJ, CPF, nome, e-mail…).</p>
+      <div class="row">
+        <button id="full" class="btn">Marcar a imagem toda</button>
+        <span id="rinfo" class="dim"></span>
+      </div>
+      <p class="step"><span class="n">2</span>Escolha a força do borrão.</p>
+      <div class="slider"><span>Leve</span><input type="range" id="rad" min="1" max="40" value="10" aria-label="Força do borrão"><span>Forte</span></div>
+      <p class="step"><span class="n">3</span>Escolha em quais frames aplicar.</p>
+      <div class="radios" role="radiogroup">
+        <label><input type="radio" name="scope" value="all" checked> <span id="sAll">Todos os frames</span></label>
+        <label><input type="radio" name="scope" value="marked" id="rMarked"> <span id="sMarked">Só os frames marcados</span></label>
+        <label><input type="radio" name="scope" value="cur"> <span id="sCur">Só o frame atual</span></label>
+      </div>
+      <div class="actions">
+        <button id="blur" class="btn pri big wide">Borrar esta área</button>
+        <button id="unblur" class="btn link">Tirar o borrão destes frames</button>
+      </div>
+    </div>
+
+    <div id="panelCut" role="tabpanel" hidden>
+      <p class="step"><span class="n">1</span><span>Na linha do tempo, embaixo, marque os frames: clique na <b>caixinha ○</b> de cada um, ou <b>arraste</b> sobre eles (a linha rola sozinha quando você chega na ponta). Para um intervalo: <kbd>Shift</kbd> + clique.</span></p>
+      <p id="selinfo" class="dim"></p>
+      <p class="step"><span class="n">2</span><span>Escolha o que apagar. Nos desenhos: <span class="lg x"></span> sai, <span class="lg k"></span> fica, <span class="lg c"></span> é o frame atual.</span></p>
+      <button id="del" class="btn danger big cutbtn"><span class="ico" data-k=".xx.."></span><span id="delt">Apagar os frames marcados</span></button>
+      <button id="before" class="btn wide cutbtn"><span class="ico" data-k="xxc.."></span><span>Apagar tudo antes do frame atual</span></button>
+      <button id="after" class="btn wide cutbtn"><span class="ico" data-k="..cxx"></span><span>Apagar tudo depois do frame atual</span></button>
+      <button id="keep" class="btn wide cutbtn"><span class="ico" data-k="xkkxx"></span><span>Ficar só com os frames marcados</span></button>
+      <p class="dim small">Errou? Clique em <b>Desfazer</b> (embaixo).</p>
+    </div>
+
+    <details id="more">
+      <summary>Mais opções</summary>
+      <label class="opt">Qualidade do arquivo salvo
+        <select id="qual">
+          <option value="255,0" selected>Melhor qualidade</option>
+          <option value="128,3">Equilibrada</option>
+          <option value="48,10">Arquivo menor</option>
+        </select>
+      </label>
+      <label class="opt chk"><input type="checkbox" id="merge"> Ao apagar frames, manter o tempo total do GIF</label>
+      <label class="opt chk"><input type="checkbox" id="keeprect"> Manter o retângulo depois de borrar</label>
+      <label class="opt chk"><input type="checkbox" id="multi"> Clicar nos frames marca vários (para celular)</label>
+    </details>
+  </aside>
+
+  <section id="timeline" aria-label="Linha do tempo">
+    <div id="tlh">
+      <span id="tinfo"><b>Frames do GIF</b> <span class="dim">— cada frame é uma imagem</span></span>
+      <label class="dim">Tamanho <input type="range" id="zoom" min="40" max="130" value="72" aria-label="Tamanho dos frames"></label>
+    </div>
+    <div id="seltools" role="group" aria-label="Marcar frames">
+      <span class="dim">Marcar:</span>
+      <button id="all" class="btn sm">Todos</button>
+      <button id="none" class="btn sm">Nenhum</button>
+      <button id="inv" class="btn sm" title="Marca os que estão desmarcados e desmarca os marcados">Inverter</button>
+      <button id="selB" class="btn sm" title="Marca todos os frames antes do frame atual">Antes do atual</button>
+      <button id="selA" class="btn sm" title="Marca todos os frames depois do frame atual">Depois do atual</button>
+      <span class="rng">De <input type="number" id="rfrom" min="1" inputmode="numeric" aria-label="Do frame número"> até <input type="number" id="rto" min="1" inputmode="numeric" aria-label="Até o frame número"> <button id="rsel" class="btn sm">Marcar intervalo</button></span>
+    </div>
+    <div id="tl"><div id="strip"></div></div>
+  </section>
+</main>
+
+<footer id="bottom" hidden>
+  <div class="left">
+    <button id="undo" class="btn">↶ Desfazer</button>
+    <button id="redo" class="btn">↷ Refazer</button>
+    <span id="msg" role="status" aria-live="polite"></span>
+  </div>
+  <div class="right">
+    <span id="dirty" class="dirty" hidden>● Alterações não salvas</span>
+    <button id="exp" class="btn ok big">Salvar GIF</button>
+  </div>
+</footer>
+
+<div id="recbar" hidden role="status" aria-live="polite">
+  <span class="recdot" aria-hidden="true"></span><span id="rect">Gravando…</span>
+  <button id="recStop" class="btn pri" hidden>■ Parar e abrir no editor</button>
+  <button id="recCancel" class="btn link">Descartar</button>
+</div>
+
+<div id="busy" hidden role="status" aria-live="polite">
+  <div class="spin" aria-hidden="true"></div><div class="doneck" aria-hidden="true">✓</div>
+  <p id="busyt">Aguarde…</p>
+  <div class="bar" id="busybar" hidden><div id="busyfill"></div></div>
+  <p id="busyn"></p>
+  <button id="busycancel" class="btn" hidden>Cancelar</button>
+</div>
+
+<dialog id="result">
+  <h3 id="resT"></h3>
+  <div id="resB"></div>
+  <p class="foot"><button id="resOk" class="btn pri">Entendi</button></p>
+</dialog>
+
+<dialog id="help">
+  <h3>Como usar</h3>
+  <ol class="how">
+    <li><b>Escolha o GIF</b> no botão azul ou arrastando o arquivo para a janela. Se for um <b>vídeo</b> (MP4, WebM), ele é convertido em GIF na hora: até 1280 px de largura, 15 frames por segundo e 256 cores. Vídeo menor que isso é mantido como está. Dá para escolher vários vídeos de uma vez.</li>
+    <li><b>Edite.</b> Em <i>Borrar dados pessoais</i>, desenhe um retângulo sobre o CNPJ, CPF, nome ou outro dado e clique em <i>Borrar</i>. Em <i>Apagar frames</i>, marque frames na linha do tempo e clique em <i>Apagar</i>.</li>
+    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado.</li>
+  </ol>
+  <p>Errou? Clique em <b>Desfazer</b>. Dá para voltar vários passos.</p>
+  <p><b>Gravar a tela:</b> clique em <i>Gravar a tela</i> e escolha a tela, a janela ou a aba. A gravação começa depois de uma contagem de 3 segundos. Para terminar, volte a esta aba e clique em <i>Parar e abrir no editor</i>, ou use o botão “Parar compartilhamento” que o navegador mostra. A gravação vira GIF e abre no editor, para você borrar e cortar. Sem som, no máximo 5 minutos. Se você parar pelo botão do navegador estando em outra aba, volte para a aba do editor: a conversão em GIF começa assim que você voltar.</p>
+  <h4>Marcar frames (com o mouse)</h4>
+  <table>
+    <tr><td>Clique no frame</td><td>marca só ele</td></tr>
+    <tr><td>Clique na caixinha <b>○</b> do canto</td><td>marca ou desmarca aquele frame, sem perder os outros</td></tr>
+    <tr><td><kbd>Shift</kbd> + clique</td><td>marca do último frame clicado até este (intervalo)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + clique</td><td>soma ou tira um frame da marcação</td></tr>
+    <tr><td>Arrastar sobre os frames</td><td>marca vários; ao chegar na ponta da linha do tempo ela rola sozinha</td></tr>
+    <tr><td>Barra “Marcar”, embaixo</td><td>todos, nenhum, inverter, antes/depois do atual ou “de … até …”</td></tr>
+  </table>
+  <h4>Atalhos do teclado (opcional)</h4>
+  <table>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>abrir GIF</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>salvar GIF</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>desfazer / refazer</td></tr>
+    <tr><td><kbd>Espaço</kbd></td><td>assistir / parar</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>frame anterior / próximo</td></tr>
+    <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd></td><td>aumenta a marcação, um frame por vez</td></tr>
+    <tr><td><kbd>Home</kbd> <kbd>End</kbd> <kbd>PgUp</kbd> <kbd>PgDn</kbd></td><td>primeiro, último, 10 para trás, 10 para frente (com <kbd>Shift</kbd> marca junto)</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>I</kbd></td><td>marcar todos / inverter a marcação</td></tr>
+    <tr><td><kbd>Del</kbd></td><td>apagar os frames marcados</td></tr>
+    <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>apagar tudo antes / depois do frame atual</td></tr>
+    <tr><td><kbd>B</kbd> ou <kbd>Enter</kbd></td><td>borrar a área marcada</td></tr>
+    <tr><td><kbd>U</kbd></td><td>tirar o borrão</td></tr>
+    <tr><td><kbd>F</kbd></td><td>marcar a imagem toda</td></tr>
+    <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>força do borrão</td></tr>
+    <tr><td><kbd>Alt</kbd> + setas</td><td>mover a área marcada (com <kbd>Shift</kbd> anda de 10 em 10)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>limpar marcações</td></tr>
+  </table>
+  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão {{VERSION}}</span><button id="helpx" class="btn pri">Entendi</button></p>
+</dialog>
+
+<script>{{SCRIPT}}</script>
+</body>
+</html>

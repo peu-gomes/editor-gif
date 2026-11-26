@@ -2,10 +2,16 @@
 // Refaz a compressão do GIF inteiro a partir das imagens compostas (o que o leitor mostra em cada frame).
 //  - tol 0 = SEM PERDA: cada frame sai idêntico, pixel a pixel (e o resultado é conferido; se algo diferir, fica o original)
 //  - tol > 0 = com perda controlada: pixels que mudaram até "tol" (soma |dR|+|dG|+|dB|) contam como "não mudou"
+//  - gap > 0 (com perda, só na compressão): no máximo um frame a cada "gap" centésimos (10 = até 10 fps); os outros
+//    são pulados e o anterior fica mais tempo na tela (a duração total não muda e o último frame sempre aparece)
 // Técnicas: grava só o retângulo que mudou; frames sem mudança viram duração do anterior; uma paleta exata para o GIF
 // inteiro quando cabe (senão, paleta exata por frame); para cada frame testa 3 jeitos de preencher o que não mudou
 // (transparente, a cor que já está na tela, ou repetir o vizinho) e fica com o menor; paleta local menor quando
 // o frame usa poucas cores (códigos LZW mais curtos).
+// Frame com mais de 255 cores (tela com degradês, sombras e texto suavizado) sem perda: é gravado em PARTES, cada uma um
+// bloco da imagem (metade, quarto...) que cabe em 255 cores exatas. As partes do meio duram 2 centésimos (o mínimo que os
+// navegadores respeitam) e levam antes um comentário "EG+", para o editor saber que são continuação do mesmo frame
+// (ver parseGIF em gifcore.js).
 (function (root) {
 'use strict';
 
@@ -80,20 +86,26 @@ function makePal(list) {
   return { list, n, idx, has: key => exactMap.get(key) };
 }
 const effDelay = d => d < 2 ? 10 : d;   // como os navegadores tocam atraso 0 ou 1
+const PART_MARK = Uint8Array.from([0x21, 0xFE, 3, 0x45, 0x47, 0x2B, 0]);   // comentário "EG+" = continuação do frame anterior
+const keyOf = (d, q) => (d[q] << 16) | (d[q + 1] << 8) | d[q + 2];
 
 // src: { W, H, N, at(i) -> RGBA composto (Uint8ClampedArray W*H*4, ou Promise dele; lido em ordem), delay(i) -> centésimos, loop: extensão NETSCAPE (bytes) ou null }
-// o: { tol, tick(fase, i, n) (pode ser async), cancelled() }
-// devolve { bytes, exact (false se algum pixel não pôde sair idêntico), map (frame de entrada -> frame de saída) }
+// o: { tol, gap, quantize, tick(fase, i, n) (pode ser async), cancelled() }
+//    quantize: true = frame com mais de 255 cores é reduzido para 255 (melhor paleta, median cut) em vez de ir em partes.
+//    Usado só na gravação de tela, que ainda não é GIF: lá a redução é inevitável e quase sempre invisível (nos testes,
+//    95% dos pixels que mudam diferem em 1 nível de 255), enquanto as partes deixavam o arquivo ~50% maior.
+// devolve { bytes, exact (false se algum pixel não pôde sair idêntico), map (frame de entrada -> frame de saída),
+//           extraCs (centésimos a mais na duração total, por causa das partes de frames com muitas cores) }
 async function encode(src, o) {
   o = o || {};
-  const { W, H, N } = src, P = W * H, tol = o.tol || 0, tick = o.tick || (() => {});
+  const { W, H, N } = src, P = W * H, tol = o.tol || 0, gap = o.gap || 0, tick = o.tick || (() => {});
   let exact = true;
   const ref = new Uint8ClampedArray(P * 4); let have = false;   // última cor gravada de cada pixel (valor de entrada)
   const changed = (d, q) => !have || (d[q + 3] < 128) !== (ref[q + 3] < 128) ||
     (d[q + 3] >= 128 && Math.abs(d[q] - ref[q]) + Math.abs(d[q + 1] - ref[q + 1]) + Math.abs(d[q + 2] - ref[q + 2]) > tol);
 
   // ---- passo 1: cores dos pixels que mudam (para a paleta) ----
-  const colors = new Map(); let overflow = false;
+  const colors = new Map(); let overflow = false;   // cor -> quantas vezes aparece (até 1 milhão de cores diferentes)
   const hAll = hist();
   for (let i = 0; i < N; i++) {
     if (o.cancelled && o.cancelled()) throw new Error('CANCELADO');
@@ -102,17 +114,27 @@ async function encode(src, o) {
       if (!changed(d, q)) continue;
       ref[q] = d[q]; ref[q + 1] = d[q + 1]; ref[q + 2] = d[q + 2]; ref[q + 3] = d[q + 3];
       if (d[q + 3] < 128) continue;
-      if (!overflow) { const key = (d[q] << 16) | (d[q + 1] << 8) | d[q + 2]; if (!colors.has(key)) { colors.set(key, 1); if (colors.size > 255) overflow = true; } }
+      const key = keyOf(d, q), c = colors.get(key);
+      if (c) colors.set(key, c + 1); else if (colors.size < 1048576) { colors.set(key, 1); if (colors.size > 255) overflow = true; }
       hAll.add(d[q], d[q + 1], d[q + 2]);
     }
     have = true;
     if (i % 4 === 3) await tick(1, i + 1, N);
   }
   // sem perda e com mais de 255 cores no total: paleta exata por frame. Senão: uma paleta para o GIF inteiro.
+  // Com perda e cores demais: as 200 cores mais usadas ficam exatas e 55 cobrem as raras (median cut), em vez de arredondar tudo.
   const local = overflow && tol === 0;
   let gpal = null;
   if (!local) {
-    const list = []; if (!overflow) for (const k of colors.keys()) list.push(k >> 16, (k >> 8) & 255, k & 255); else list.push(...medianCut(hAll, 255));
+    const list = [];
+    if (!overflow) for (const k of colors.keys()) list.push(k >> 16, (k >> 8) & 255, k & 255);
+    else {
+      const top = [...colors.entries()].sort((a, b) => b[1] - a[1]).slice(0, 200), inTop = new Set();
+      for (const [k] of top) { list.push(k >> 16, (k >> 8) & 255, k & 255); inTop.add(k); }
+      const hTail = hist();
+      for (const [k, n] of colors) if (!inTop.has(k)) for (let j = 0; j < Math.min(n, 64); j++) hTail.add(k >> 16, (k >> 8) & 255, k & 255);
+      list.push(...medianCut(hTail, 255 - top.length));
+    }
     gpal = makePal(list);
   }
   colors.clear();
@@ -127,49 +149,45 @@ async function encode(src, o) {
   ref.fill(0); have = false;
   const disp = new Int32Array(P).fill(-1);   // cor (RGB) que o leitor mostra em cada pixel; -1 = transparente
   const mask = new Uint8Array(P), map = new Int32Array(N);
-  let pend = null, written = 0;
+  let pend = null, written = 0, extraCs = 0, tNow = 0, nextT = 0;   // tNow = quando o frame i começa (centésimos)
+  // grava o frame pendente; com várias partes, as do meio duram 2 centésimos e a última fica com o resto
   const flush = () => {
     if (!pend) return;
-    parts.push(Uint8Array.from([0x21, 0xF9, 4, (1 << 2) | (pend.t >= 0 ? 1 : 0), ...u16(Math.min(65535, pend.delay)), Math.max(0, pend.t), 0]));
-    parts.push(Uint8Array.from([0x2C, ...u16(pend.x), ...u16(pend.y), ...u16(pend.w), ...u16(pend.h), pend.lct ? 0x80 | (pend.lbits - 1) : 0]));
-    if (pend.lct) parts.push(pend.lct);
-    parts.push(pend.data); written++; pend = null;
+    const m = pend.parts.length, last = Math.max(2, pend.delay - 2 * (m - 1));
+    if (m > 1) extraCs += Math.max(0, 2 * (m - 1) + last - effDelay(pend.delay));
+    pend.parts.forEach((pt, j) => {
+      const dl = j < m - 1 ? 2 : (m > 1 ? last : pend.delay);
+      if (j > 0) parts.push(PART_MARK);
+      parts.push(Uint8Array.from([0x21, 0xF9, 4, (1 << 2) | (pt.t >= 0 ? 1 : 0), ...u16(Math.min(65535, dl)), Math.max(0, pt.t), 0]));
+      parts.push(Uint8Array.from([0x2C, ...u16(pt.x), ...u16(pt.y), ...u16(pt.w), ...u16(pt.h), pt.lct ? 0x80 | (pt.lbits - 1) : 0]));
+      if (pt.lct) parts.push(pt.lct);
+      parts.push(pt.data);
+    });
+    written++; pend = null;
   };
-  for (let i = 0; i < N; i++) {
-    if (o.cancelled && o.cancelled()) throw new Error('CANCELADO');
-    const d = await src.at(i); let x0 = W, y0 = H, x1 = -1, y1 = -1;
-    mask.fill(0);
-    for (let y = 0, p = 0; y < H; y++) for (let x = 0; x < W; x++, p++) {
-      const q = p * 4; if (!changed(d, q)) continue;
-      if (d[q + 3] < 128) { exact = false; continue; }   // GIF sem "apagar" não volta a ficar transparente
-      mask[p] = 1; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  // cores (exatas) dos pixels que mudaram dentro do retângulo; null se passar de 255
+  const rectColors = (d, a0, b0, a1, b1) => {
+    const seen = new Set();
+    for (let y = b0; y <= b1; y++) for (let x = a0, p = y * W + a0; x <= a1; x++, p++) {
+      if (!mask[p]) continue; seen.add(keyOf(d, p * 4)); if (seen.size > 255) return null;
     }
-    if (x1 < 0) {   // nada mudou: só estica a duração do frame anterior
-      if (pend) { pend.delay = effDelay(pend.delay) + effDelay(src.delay(i)); map[i] = written; continue; }
-      x0 = y0 = x1 = y1 = 0;   // primeiro frame totalmente transparente: grava 1 pixel transparente
-    }
-    flush(); map[i] = written;
-    const w = x1 - x0 + 1, h = y1 - y0 + 1, n = w * h;
-    // paleta deste frame
-    let pal = gpal, T = gT, bits = gBits;
-    if (local) {
-      const list = [], seen = new Map(); let over = false;
-      for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) {
-        if (!mask[p]) continue; const q = p * 4, key = (d[q] << 16) | (d[q + 1] << 8) | d[q + 2];
-        if (!seen.has(key)) { seen.set(key, 1); if (seen.size > 255) { over = true; break; } list.push(d[q], d[q + 1], d[q + 2]); }
-      }
-      if (over) {   // mais de 255 cores num frame só: reduz este frame (não fica exato)
-        exact = false; const hf = hist();
-        for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) {
-          if (!mask[p]) continue; const q = p * 4; hf.add(d[q], d[q + 1], d[q + 2]);
-        }
-        list.length = 0; list.push(...medianCut(hf, 255));
-      }
-      pal = makePal(list); T = pal.n; bits = bitsFor(pal.n + 1);
-    }
-    const minCode = Math.max(2, bits);
-    // A = o que não mudou fica transparente; B = repete a cor que já está na tela (se existir na paleta);
-    // C = como A, mas repete a cor da tela quando ela é igual à do pixel anterior (sequências mais longas)
+    return seen;
+  };
+  // divide o retângulo ao meio (no lado maior) até cada bloco ter no máximo 255 cores; cada bloco fica justo nos pixels que mudaram
+  function splitBlocks(d, a0, b0, a1, b1) {
+    let c0 = W, r0 = H, c1 = -1, r1 = -1;
+    for (let y = b0; y <= b1; y++) for (let x = a0, p = y * W + a0; x <= a1; x++, p++)
+      if (mask[p]) { if (x < c0) c0 = x; if (x > c1) c1 = x; if (y < r0) r0 = y; if (y > r1) r1 = y; }
+    if (c1 < 0) return [];
+    const keys = rectColors(d, c0, r0, c1, r1);
+    if (keys || (c0 === c1 && r0 === r1)) return [{ x0: c0, y0: r0, x1: c1, y1: r1, keys: keys || new Set([keyOf(d, (r0 * W + c0) * 4)]) }];
+    if (c1 - c0 >= r1 - r0) { const m = (c0 + c1) >> 1; return [...splitBlocks(d, c0, r0, m, r1), ...splitBlocks(d, m + 1, r0, c1, r1)]; }
+    const m = (r0 + r1) >> 1; return [...splitBlocks(d, c0, r0, c1, m), ...splitBlocks(d, c0, m + 1, c1, r1)];
+  }
+  // grava um retângulo com a paleta dada. A = o que não mudou fica transparente; B = repete a cor que já está na tela
+  // (se existir na paleta); C = como A, mas repete a cor da tela quando ela é igual à do pixel anterior (sequências mais longas)
+  function encRect(d, x0, y0, x1, y1, pal, T, bits, isLocal) {
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, n = w * h, minCode = Math.max(2, bits);
     const A = new Uint8Array(n), B = new Uint8Array(n), C = new Uint8Array(n);
     let k = 0, lastC = -1, diffB = false, diffC = false;
     for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++, k++) {
@@ -182,9 +200,9 @@ async function encode(src, o) {
     let best = A, data = lzw(A, minCode);
     if (diffB) { const db = lzw(B, minCode); if (db.length < data.length) { data = db; best = B; } }
     if (diffC) { const dc = lzw(C, minCode); if (dc.length < data.length) { data = dc; best = C; } }
-    // paleta local menor, quando o frame usa poucas cores
+    // paleta local menor, quando o retângulo usa poucas cores
     let lct = null, lbits = 0, t = T;
-    if (local) { lct = new Uint8Array((1 << bits) * 3); lct.set(pal.list); lbits = bits; }
+    if (isLocal) { lct = new Uint8Array((1 << bits) * 3); lct.set(pal.list); lbits = bits; }
     else {
       const seenI = new Int16Array(256).fill(-1), used = [];
       let ok = true;
@@ -193,32 +211,80 @@ async function encode(src, o) {
       if (ok && lb < bits) {
         const m = new Uint8Array(n); for (let j = 0; j < n; j++) m[j] = seenI[best[j]];
         const l = new Uint8Array((1 << lb) * 3);
-        used.forEach((v, j) => { if (v < gpal.n) { l[j * 3] = gpal.list[v * 3]; l[j * 3 + 1] = gpal.list[v * 3 + 1]; l[j * 3 + 2] = gpal.list[v * 3 + 2]; } });
+        used.forEach((v, j) => { if (v < pal.n) { l[j * 3] = pal.list[v * 3]; l[j * 3 + 1] = pal.list[v * 3 + 1]; l[j * 3 + 2] = pal.list[v * 3 + 2]; } });
         const dl = lzw(m, Math.max(2, lb));
         if (dl.length + l.length < data.length) {
           data = dl; lct = l; lbits = lb;
-          // transparente: o índice local de T; se o frame não usa T, um índice livre; se não houver livre, sem transparência
+          // transparente: o índice local de T; se não usa T, um índice livre; se não houver livre, sem transparência
           t = seenI[T] >= 0 ? seenI[T] : used.length < (1 << lb) ? used.length : -1;
         }
       }
     }
+    return { x: x0, y: y0, w, h, data, lct, lbits, t };
+  }
+  for (let i = 0; i < N; i++) {
+    if (o.cancelled && o.cancelled()) throw new Error('CANCELADO');
+    // menos frames por segundo (só na compressão): grade de "gap" centésimos; frame que cai antes da próxima vaga é pulado (nunca o último)
+    const tI = tNow; tNow += effDelay(src.delay(i));
+    if (gap) {
+      if (pend && i < N - 1 && tI < nextT) { pend.delay = effDelay(pend.delay) + effDelay(src.delay(i)); map[i] = written; continue; }
+      nextT = Math.max(nextT + gap, tI + 1); while (nextT <= tI) nextT += gap;
+    }
+    const d = await src.at(i); let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    mask.fill(0);
+    for (let y = 0, p = 0; y < H; y++) for (let x = 0; x < W; x++, p++) {
+      const q = p * 4; if (!changed(d, q)) continue;
+      if (d[q + 3] < 128) { exact = false; continue; }   // GIF sem "apagar" não volta a ficar transparente
+      mask[p] = 1; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    if (x1 < 0) {   // nada mudou: só estica a duração do frame anterior
+      if (pend) { pend.delay = effDelay(pend.delay) + effDelay(src.delay(i)); map[i] = written; continue; }
+      x0 = y0 = x1 = y1 = 0;   // primeiro frame totalmente transparente: grava 1 pixel transparente
+    }
+    flush(); map[i] = written;
+    // Sem perda com paleta por frame: se o frame tiver mais de 255 cores, ele é dividido em BLOCOS (metades, até cada
+    // bloco caber em 255 cores) e cada bloco vira uma parte, com as próprias cores exatas. Cada pixel é gravado uma vez só.
+    let fparts, qpal = null;
+    if (!local) fparts = [encRect(d, x0, y0, x1, y1, gpal, gT, gBits, false)];
+    else {
+      fparts = [];
+      let blocks = null;
+      if (o.quantize) {
+        const keys = rectColors(d, x0, y0, x1, y1);
+        if (!keys) {   // reduz este frame para 255 cores (não fica exato)
+          exact = false; const hf = hist();
+          for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) if (mask[p]) { const q = p * 4; hf.add(d[q], d[q + 1], d[q + 2]); }
+          const list = medianCut(hf, 255), pal = makePal(list);
+          fparts.push(encRect(d, x0, y0, x1, y1, pal, pal.n, bitsFor(pal.n + 1), true));
+          qpal = pal; blocks = [];
+        }
+      }
+      for (const bk of blocks || splitBlocks(d, x0, y0, x1, y1)) {
+        const list = []; for (const k of bk.keys) list.push(k >> 16, (k >> 8) & 255, k & 255);
+        const pal = makePal(list);
+        fparts.push(encRect(d, bk.x0, bk.y0, bk.x1, bk.y1, pal, pal.n, bitsFor(pal.n + 1), true));
+      }
+    }
     // o que o leitor passa a mostrar
     for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) {
-      if (!mask[p]) continue; const q = p * 4, v = pal.idx(d[q], d[q + 1], d[q + 2]);
-      disp[p] = (pal.list[v * 3] << 16) | (pal.list[v * 3 + 1] << 8) | pal.list[v * 3 + 2];
+      if (!mask[p]) continue; const q = p * 4;
+      if (qpal) { const v = qpal.idx(d[q], d[q + 1], d[q + 2]); disp[p] = (qpal.list[v * 3] << 16) | (qpal.list[v * 3 + 1] << 8) | qpal.list[v * 3 + 2]; }   // cor reduzida
+      else if (local) disp[p] = keyOf(d, q);   // cores exatas
+      else { const v = gpal.idx(d[q], d[q + 1], d[q + 2]); disp[p] = (gpal.list[v * 3] << 16) | (gpal.list[v * 3 + 1] << 8) | gpal.list[v * 3 + 2]; }
       ref[q] = d[q]; ref[q + 1] = d[q + 1]; ref[q + 2] = d[q + 2]; ref[q + 3] = 255;
     }
     have = true;
-    pend = { x: x0, y: y0, w, h, data, lct, lbits, t, delay: src.delay(i) };
+    pend = { parts: fparts, delay: src.delay(i) };
     if (i % 4 === 3) await tick(2, i + 1, N);
   }
   flush(); parts.push(Uint8Array.from([0x3B]));
   let tot = 0; for (const p of parts) tot += p.length;
   const bytes = new Uint8Array(tot); let off = 0; for (const p of parts) { bytes.set(p, off); off += p.length; }
-  return { bytes, exact, map, written };
+  return { bytes, exact, map, written, extraCs };
 }
 // confere se o GIF gerado mostra exatamente as mesmas imagens (e durações) que a entrada
-async function verify(bytes, src, map, tick) {
+// extraCs: centésimos a mais aceitos na duração total (partes de frames com muitas cores)
+async function verify(bytes, src, map, tick, extraCs) {
   const g = root.GifCore.parseGIF(bytes), c = root.GifCore.makeComposer(g, 1.5e8), P4 = src.W * src.H * 4;
   if (g.W !== src.W || g.H !== src.H) return false;
   for (let i = 0; i < src.N; i++) {
@@ -232,7 +298,7 @@ async function verify(bytes, src, map, tick) {
   }
   // duração total igual (como os navegadores tocam)
   let da = 0, db = 0; for (let i = 0; i < src.N; i++) da += effDelay(src.delay(i)); for (const f of g.frames) db += effDelay(f.delay);
-  return da === db;
+  return db >= da && db - da <= (extraCs || 0);
 }
 
 // entrada a partir dos bytes de um GIF
@@ -247,16 +313,24 @@ async function lossless(bytes, o) {
   const src = fromBytes(bytes);
   const r = await encode(src, { tol: 0, tick: o.tick, cancelled: o.cancelled });
   if (!r.exact || r.bytes.length >= bytes.length) return { bytes, optimized: false };
-  if (!(await verify(r.bytes, fromBytes(bytes), r.map, o.tick))) return { bytes, optimized: false };
+  if (!(await verify(r.bytes, fromBytes(bytes), r.map, o.tick, r.extraCs))) return { bytes, optimized: false };
   return { bytes: r.bytes, optimized: true };
 }
-
-// COM PERDA: comprime com a tolerância tol
-async function lossy(bytes, tol, o) {
+// SEM PERDA a partir de imagens (o editor, com borrões e frames apagados): devolve null se não deu para sair idêntico
+async function fromFrames(src, o) {
   o = o || {};
-  const r = await encode(fromBytes(bytes), { tol, tick: o.tick, cancelled: o.cancelled });
+  const r = await encode(src, { tol: 0, tick: o.tick, cancelled: o.cancelled });
+  if (!r.exact) return null;
+  if (!(await verify(r.bytes, src, r.map, o.tick, r.extraCs))) return null;
+  return r.bytes;
+}
+
+// COM PERDA: comprime no nível lv = { tol, gap }
+async function lossy(bytes, lv, o) {
+  o = o || {};
+  const r = await encode(fromBytes(bytes), { tol: lv.tol, gap: lv.gap, tick: o.tick, cancelled: o.cancelled });
   return r.bytes.length < bytes.length ? r.bytes : bytes;
 }
 
-root.GifOpt = { encode, verify, fromBytes, lossless, lossy, lzw };
+root.GifOpt = { encode, verify, fromBytes, fromFrames, lossless, lossy, lzw, PART_MARK };
 })(typeof window !== 'undefined' ? window : globalThis);

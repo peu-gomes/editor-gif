@@ -9,7 +9,7 @@ function parseGIF(buf) {
   let p = 13, gct = null;
   if (flags & 0x80) { const n = 3 << ((flags & 7) + 1); gct = buf.subarray(p, p + n); p += n; }
   const frames = [], appExts = [];
-  let gce = null;
+  let gce = null, cont = false;   // cont: a próxima imagem é continuação do frame anterior (comentário "EG+", ver gifopt.js)
   while (p < buf.length) {
     const b = buf[p];
     if (b === 0x3B) break;
@@ -21,6 +21,7 @@ function parseGIF(buf) {
       while (p < buf.length && buf[p] !== 0) p += buf[p] + 1;
       p++;
       if (label === 0xFF && frames.length === 0) appExts.push(buf.subarray(start, p));
+      if (label === 0xFE && buf[start + 2] === 3 && buf[start + 3] === 0x45 && buf[start + 4] === 0x47 && buf[start + 5] === 0x2B) cont = true;
     } else if (b === 0x2C) {
       const imgStart = p;
       const x = buf[p + 1] | (buf[p + 2] << 8), y = buf[p + 3] | (buf[p + 4] << 8);
@@ -32,11 +33,14 @@ function parseGIF(buf) {
       const dataStart = p;
       while (p < buf.length && buf[p] !== 0) p += buf[p] + 1;
       p++;
-      frames.push({
+      const fr = {
         x, y, w, h, interlaced: !!(pk & 0x40), lct, minCode, dataStart, imgStart, imgEnd: Math.min(p, buf.length),
         delay: gce ? gce.delay : 0, disposal: gce ? gce.disposal : 0, transp: gce ? gce.transp : -1
-      });
-      gce = null;
+      };
+      const last = frames[frames.length - 1];
+      if (cont && last && last.disposal <= 1) { (last.extra = last.extra || []).push(fr); last.delay += fr.delay; }   // parte do mesmo frame
+      else frames.push(fr);
+      gce = null; cont = false;
     } else p++;
   }
   if (!frames.length) throw new Error('GIF sem frames');
@@ -155,13 +159,40 @@ function blurBox(b, W, H) {
   return { x0, y0, x1, y1 };
 }
 
+// Borrão "leve para o arquivo": o desfoque normal cria centenas de cores novas em degradê (o GIF quase dobrava de tamanho).
+// Aqui o resultado usa só cores que JÁ existem na área (as 64 mais usadas): texto na tela tem bordas suavizadas, com
+// vários tons entre o fundo e a letra, e o desfoque cai nesses tons. Nos testes: borrão +3,6% no arquivo (antes, +31%).
+// Área com poucas cores (texto sem suavização) ganha uma escala de 8 tons entre as duas principais, para o borrão não
+// virar manchas de contorno nítido. Depende só dos pixels da própria área: se ela não muda, o borrão também não.
+const RAMP = 8, FEW = 12, KEEP = 64;
 function blurRegion(rgba, W, H, rx, ry, rw, rh, r) {
   const { x0, y0, x1, y1 } = blurBox({ x: rx, y: ry, w: rw, h: rh }, W, H);
   const w = x1 - x0, h = y1 - y0;
   if (w < 1 || h < 1 || r < 1) return;
   const a = new Uint8ClampedArray(w * h * 4), b = new Uint8ClampedArray(w * h * 4);
   for (let y = 0; y < h; y++) a.set(rgba.subarray(((y0 + y) * W + x0) * 4, ((y0 + y) * W + x1) * 4), y * w * 4);
+  // cores da área antes de borrar
+  const freq = new Map();
+  for (let o = 0; o < a.length; o += 4) if (a[o + 3] >= 128) { const k = (a[o] << 16) | (a[o + 1] << 8) | a[o + 2]; freq.set(k, (freq.get(k) || 0) + 1); }
   for (let it = 0; it < 2; it++) { pass(a, b, w, h, r, true); pass(b, a, w, h, r, false); }
+  if (freq.size) {
+    const top = [...freq.entries()].sort((p, q) => q[1] - p[1]).slice(0, KEEP).map(e => e[0]), pal = top.slice();
+    if (top.length > 1 && freq.size < FEW) {
+      const c1 = top[0], c2 = top[1], ch = (c, s) => (c >> s) & 255;
+      for (let s = 1; s < RAMP; s++) { const t = s / RAMP, m = sh => Math.round(ch(c1, sh) * (1 - t) + ch(c2, sh) * t); pal.push((m(16) << 16) | (m(8) << 8) | m(0)); }
+    }
+    const n = pal.length, pr = new Int32Array(n), pg = new Int32Array(n), pb = new Int32Array(n), near = new Map();
+    pal.forEach((c, i) => { pr[i] = c >> 16; pg[i] = (c >> 8) & 255; pb[i] = c & 255; });
+    for (let o = 0; o < a.length; o += 4) {
+      const k = (a[o] << 16) | (a[o + 1] << 8) | a[o + 2]; let v = near.get(k);
+      if (v === undefined) {
+        let best = 1e9; v = 0;
+        for (let i = 0; i < n; i++) { const dr = a[o] - pr[i], dg = a[o + 1] - pg[i], db = a[o + 2] - pb[i], dd = dr * dr * 2 + dg * dg * 4 + db * db * 3; if (dd < best) { best = dd; v = i; if (!dd) break; } }
+        near.set(k, v);
+      }
+      a[o] = pr[v]; a[o + 1] = pg[v]; a[o + 2] = pb[v];
+    }
+  }
   for (let y = 0; y < h; y++) rgba.set(a.subarray(y * w * 4, (y + 1) * w * 4), ((y0 + y) * W + x0) * 4);
 }
 
@@ -247,8 +278,12 @@ function lzwEncode(idx, minCode) {
   return Uint8Array.from(res);
 }
 
-// Desenha os pixels de um frame original sobre um canvas RGBA (como o leitor de GIF faz).
+// Desenha os pixels de um frame original sobre um canvas RGBA (como o leitor de GIF faz), com as partes, se houver.
 function drawRaw(canvas, g, f) {
+  drawPart(canvas, g, f);
+  if (f.extra) for (const p of f.extra) drawPart(canvas, g, p);
+}
+function drawPart(canvas, g, f) {
   const { W, H } = g, idx = frameIndices(g, f), pal = f.lct || g.gct;
   if (!pal) return;
   for (let yy = 0; yy < f.h; yy++) {
@@ -393,7 +428,7 @@ async function buildGIF(g, kept, opts) {
   for (const e of g.appExts) parts.push(e);
 
   const K = opts.blurColors || 255, tolBlur = opts.blurTol === undefined ? 0 : opts.blurTol;
-  const RAW_TOL = 30;   // diferença máxima (soma RGB) aceita para copiar o frame intacto
+  const RAW_TOL = 0;   // só copia o frame intacto se a imagem sair idêntica
   let sim = new Uint8ClampedArray(W * H * 4), rawN = 0, reN = 0;
   const ref = new Uint8ClampedArray(W * H * 4);   // valor exato que cada pixel deveria ter
 
@@ -410,8 +445,8 @@ async function buildGIF(g, kept, opts) {
     const snap = f.snap || opts.getSnap(f.i);
     const target = f.blurs.length ? applyBlurs(snap, W, H, f.blurs) : snap;
 
-    // 1) tenta copiar o frame original intacto
-    if (!f.blurs.length) {
+    // 1) tenta copiar o frame original intacto (frame gravado em partes não: o atraso de cada parte precisaria mudar)
+    if (!f.blurs.length && !info.extra) {
       const trial = sim.slice();
       drawRaw(trial, g, info);
       let ok = true;

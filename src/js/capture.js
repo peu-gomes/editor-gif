@@ -77,7 +77,7 @@ async function finishCapture(r, secs) {
   let bytes = null, erro = cap.err, desistiu = false;
   if (!erro) await work('Transformando a gravação em GIF…', async () => {
     try {
-      const res = await GifOpt.encode(captureSource(cap), { tol: 0, cancelled: () => cancelled,
+      const res = await GifOpt.encode(captureSource(cap), { tol: 0, quantize: true, cancelled: () => cancelled,
         tick: async (ph, i, n) => { progress((ph - 1 + i / n) / 2, `Frame ${i} de ${n}`); await sleep(0); } });
       bytes = res.bytes;
       if (!keep) return;

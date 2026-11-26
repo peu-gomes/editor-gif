@@ -127,13 +127,6 @@
 
     <details id="more">
       <summary>Mais opções</summary>
-      <label class="opt">Qualidade do arquivo salvo
-        <select id="qual">
-          <option value="255,0" selected>Melhor qualidade</option>
-          <option value="128,3">Equilibrada</option>
-          <option value="48,10">Arquivo menor</option>
-        </select>
-      </label>
       <label class="opt chk"><input type="checkbox" id="merge"> Ao apagar frames, manter o tempo total do GIF</label>
       <label class="opt chk"><input type="checkbox" id="keeprect"> Manter as áreas marcadas depois de borrar</label>
       <label class="opt chk"><input type="checkbox" id="multi"> Clicar nos frames marca vários (para celular)</label>
@@ -190,7 +183,7 @@
   <ol class="how">
     <li><b>Escolha o GIF</b> no botão azul ou arrastando o arquivo para a janela. Se for um <b>vídeo</b> (MP4, WebM), ele é convertido em GIF na hora: até 1280 px de largura, 15 frames por segundo e 256 cores. Vídeo menor que isso é mantido como está. Dá para escolher vários vídeos de uma vez.</li>
     <li><b>Edite.</b> Em <i>Borrar dados pessoais</i>, desenhe um retângulo sobre cada CNPJ, CPF, nome ou outro dado (pode marcar vários) e clique em <i>Borrar</i>. Em <i>Apagar frames</i>, marque frames na linha do tempo e clique em <i>Apagar</i>.</li>
-    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado. Ao salvar, o arquivo é diminuído sem perder qualidade (cada pixel é conferido). Se ainda passar de 2,9 MB, o editor pergunta se você quer comprimir só o necessário para caber.</li>
+    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado. Ao salvar, o arquivo é diminuído sem perder qualidade (cada pixel é conferido). Se ainda passar de 2,9 MB, o editor pergunta se você quer comprimir só o necessário para caber (primeiro ignorando mudanças mínimas entre frames; se não bastar, com menos frames por segundo) ou salvar assim mesmo. O borrão foi feito para pesar pouco: ele usa as cores que já existem na área.</li>
   </ol>
   <p>Errou? Clique em <b>Desfazer</b>, no alto. Dá para voltar vários passos.</p>
   <p><b>Ver de perto:</b> segure <kbd>Ctrl</kbd> e gire a roda do mouse sobre a imagem (ou use <b>−</b> / <b>+</b> embaixo da imagem). Com a imagem ampliada, a roda rola e o botão do meio do mouse arrasta. <i>Ajustar</i> volta a mostrar a imagem inteira.</p>

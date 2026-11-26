@@ -93,24 +93,45 @@ async function loadVideo(file, noAsk) {   // noAsk: quem chama já tratou as alt
   if (out && out.cancel) say('Conversão cancelada. Nenhum arquivo foi baixado.');
   else if (out) showResult(out.title, out.lines, out.kind);
 }
-// vários vídeos: converte um por um e baixa cada GIF (sem abrir no editor)
+// vários vídeos: converte um por um (sem abrir no editor). Os que ficam até 2,9 MB são baixados na hora; os maiores
+// esperam o fim e a pessoa escolhe UMA vez o que fazer com todos eles (comprimir, salvar assim mesmo ou não salvar).
 async function convertBatch(vids) {
   if (dirty && !confirm('Você tem alterações que ainda não foram salvas no editor.\n\nA conversão em lote não usa o editor, então elas continuam como estão.\n\nQuer continuar?')) return;
-  let ok = 0, parou = false; const linhas = [];
+  let ok = 0, parou = false; const linhas = [], grandes = [];
   await work(`Convertendo ${vids.length} vídeos…`, async () => {
     for (let i = 0; i < vids.length; i++) {
       if (cancelled) break;
       try {
         const r = await VideoGif.convert(vids[i], convOpts(`Vídeo ${i + 1} de ${vids.length}: `)), nm = baseName(vids[i].name) + '.gif';
-        let out = await optimizeLossless(r.bytes), extra = '';   // em lote não dá para perguntar: comprime sozinho se passar do limite
-        if (out.length > LIMIT) { const c = await compressToFit(out); out = c.bytes; extra = c.fits ? `, comprimido no nível ${c.level} para caber em ${LIMIT_TXT}` : `, comprimido ao máximo e ainda acima de ${LIMIT_TXT}`; }
-        saveGif(out, nm); ok++; linhas.push(`✓ ${vids[i].name} → ${nm} (${kb(out.length)}${extra})`);
+        const out = await optimizeLossless(r.bytes);
+        if (out.length > LIMIT) { grandes.push({ nome: vids[i].name, nm, bytes: out }); continue; }
+        saveGif(out, nm); ok++; linhas.push(`✓ ${vids[i].name} → ${nm} (${kb(out.length)})`);
         await sleep(300);
       } catch (err) { if (err.message === 'CANCELADO') break; linhas.push(`✗ ${vids[i].name}: ${errMsg(err)}`); }
     }
     parou = cancelled;
-    if (!ok) return false;
-  }, 'Conversão concluída!', { cancel: true });
+    if (!ok && !grandes.length) return false;
+  }, grandes.length ? null : 'Conversão concluída!', { cancel: true });
+  if (grandes.length && !parou) {
+    const a = await askBig(grandes.length === 1 ? `Um GIF passou de ${LIMIT_TXT}` : `${grandes.length} GIFs passaram de ${LIMIT_TXT}`, [
+      ...grandes.map(x => `${x.nm}: ${mb(x.bytes.length)}`),
+      grandes.length === 1 ? 'Ele já foi diminuído ao máximo sem perder qualidade.' : 'Eles já foram diminuídos ao máximo sem perder qualidade.',
+      `Posso comprimir ${grandes.length === 1 ? 'esse GIF' : 'cada um'} só o necessário para caber em ${LIMIT_TXT} (primeiro ignorando mudanças muito pequenas entre frames; se não bastar, com menos frames por segundo).`],
+      true, 'Salvar assim mesmo');
+    if (a === 'no') for (const x of grandes) linhas.push(`– ${x.nome}: não foi salvo (${mb(x.bytes.length)}, acima de ${LIMIT_TXT})`);
+    else await work('Salvando os GIFs grandes…', async () => {
+      for (const x of grandes) {
+        if (cancelled) { linhas.push(`– ${x.nome}: não foi salvo (cancelado)`); continue; }
+        let out = x.bytes, extra = '';
+        if (a === 'comp') {
+          try { const c = await compressToFit(x.bytes); out = c.bytes; extra = c.fits ? `, comprimido no nível ${c.level}` : `, comprimido ao máximo e ainda acima de ${LIMIT_TXT}`; }
+          catch (err) { if (err.message !== 'CANCELADO') throw err; linhas.push(`– ${x.nome}: não foi salvo (cancelado)`); continue; }
+        }
+        saveGif(out, x.nm); ok++; linhas.push(`✓ ${x.nome} → ${x.nm} (${kb(out.length)}${extra})`);
+        await sleep(300);
+      }
+    }, 'Conversão concluída!', { cancel: a === 'comp' });
+  } else if (grandes.length) for (const x of grandes) linhas.push(`– ${x.nome}: não foi salvo (cancelado)`);
   const resumo = ok ? `${ok} de ${vids.length} GIFs foram baixados (pasta de downloads).` : 'Nenhum arquivo foi baixado.';
   showResult(parou ? 'Conversão cancelada' : ok === vids.length ? 'Vídeos convertidos' : 'A conversão terminou com problemas', [resumo, ...linhas],
     ok === vids.length && !parou ? 'ok' : ok ? 'warn' : 'err');

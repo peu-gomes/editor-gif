@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-99lURYWL6Z0LfSXZflDrf6wnjtt7ixdlg8hO+Kt2egY='; style-src 'sha256-9QehB21xb1bPmconHMygL6Y3PWZ7x+7xKc2tjo+TuRg='; img-src blob: data:; media-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-pPJeIDTJOOQANiVAXAB/pKKUPaRKynmiWhwQFfDQ8Ec='; style-src 'sha256-9QehB21xb1bPmconHMygL6Y3PWZ7x+7xKc2tjo+TuRg='; img-src blob: data:; media-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Central de Ajuda · Editor de GIF v1.6.0</title>
+<title>Central de Ajuda · Editor de GIF v1.7.0</title>
 <style>:root {
   color-scheme: light;
   --bg: #f3f5f9; --panel: #ffffff; --line: #d3d9e4; --fg: #1c2433; --dim: #5a6577;
@@ -298,7 +298,7 @@ dialog td:first-child { white-space: nowrap; }
 <input type="file" id="file" accept="image/gif,.gif,video/*,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
 
 <header id="top">
-  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v1.6.0</span><span class="priv">Seu arquivo fica só neste computador</span></div>
+  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v1.7.0</span><span class="priv">Seu arquivo fica só neste computador</span></div>
   <div class="top-actions">
     <button id="recAgain" class="btn recbtn" hidden><span class="reddot" aria-hidden="true">●</span> Gravar a tela</button>
     <button id="openAgain" class="btn" hidden>Abrir outro GIF</button>
@@ -343,7 +343,7 @@ dialog td:first-child { white-space: nowrap; }
       <li><b>Gravar a tela</b> e editar o resultado na hora</li>
       <li><b>Salvar</b> o resultado, sem mexer no arquivo original</li>
     </ul>
-    <p class="dim small verwelcome">Editor de GIF · versão 1.6.0</p>
+    <p class="dim small verwelcome">Editor de GIF · versão 1.7.0</p>
   </div>
 </main>
 
@@ -413,13 +413,6 @@ dialog td:first-child { white-space: nowrap; }
 
     <details id="more">
       <summary>Mais opções</summary>
-      <label class="opt">Qualidade do arquivo salvo
-        <select id="qual">
-          <option value="255,0" selected>Melhor qualidade</option>
-          <option value="128,3">Equilibrada</option>
-          <option value="48,10">Arquivo menor</option>
-        </select>
-      </label>
       <label class="opt chk"><input type="checkbox" id="merge"> Ao apagar frames, manter o tempo total do GIF</label>
       <label class="opt chk"><input type="checkbox" id="keeprect"> Manter as áreas marcadas depois de borrar</label>
       <label class="opt chk"><input type="checkbox" id="multi"> Clicar nos frames marca vários (para celular)</label>
@@ -476,7 +469,7 @@ dialog td:first-child { white-space: nowrap; }
   <ol class="how">
     <li><b>Escolha o GIF</b> no botão azul ou arrastando o arquivo para a janela. Se for um <b>vídeo</b> (MP4, WebM), ele é convertido em GIF na hora: até 1280 px de largura, 15 frames por segundo e 256 cores. Vídeo menor que isso é mantido como está. Dá para escolher vários vídeos de uma vez.</li>
     <li><b>Edite.</b> Em <i>Borrar dados pessoais</i>, desenhe um retângulo sobre cada CNPJ, CPF, nome ou outro dado (pode marcar vários) e clique em <i>Borrar</i>. Em <i>Apagar frames</i>, marque frames na linha do tempo e clique em <i>Apagar</i>.</li>
-    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado. Ao salvar, o arquivo é diminuído sem perder qualidade (cada pixel é conferido). Se ainda passar de 2,9 MB, o editor pergunta se você quer comprimir só o necessário para caber.</li>
+    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado. Ao salvar, o arquivo é diminuído sem perder qualidade (cada pixel é conferido). Se ainda passar de 2,9 MB, o editor pergunta se você quer comprimir só o necessário para caber (primeiro ignorando mudanças mínimas entre frames; se não bastar, com menos frames por segundo) ou salvar assim mesmo. O borrão foi feito para pesar pouco: ele usa as cores que já existem na área.</li>
   </ol>
   <p>Errou? Clique em <b>Desfazer</b>, no alto. Dá para voltar vários passos.</p>
   <p><b>Ver de perto:</b> segure <kbd>Ctrl</kbd> e gire a roda do mouse sobre a imagem (ou use <b>−</b> / <b>+</b> embaixo da imagem). Com a imagem ampliada, a roda rola e o botão do meio do mouse arrasta. <i>Ajustar</i> volta a mostrar a imagem inteira.</p>
@@ -512,7 +505,7 @@ dialog td:first-child { white-space: nowrap; }
     <tr><td><kbd>Alt</kbd> + setas</td><td>mover a área escolhida (com <kbd>Shift</kbd> anda de 10 em 10)</td></tr>
     <tr><td><kbd>Esc</kbd></td><td>tirar todas as áreas e a marcação dos frames</td></tr>
   </table>
-  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão 1.6.0</span><button id="helpx" class="btn pri">Entendi</button></p>
+  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão 1.7.0</span><button id="helpx" class="btn pri">Entendi</button></p>
 </dialog>
 
 <script>(function (root) {
@@ -526,7 +519,7 @@ function parseGIF(buf) {
   let p = 13, gct = null;
   if (flags & 0x80) { const n = 3 << ((flags & 7) + 1); gct = buf.subarray(p, p + n); p += n; }
   const frames = [], appExts = [];
-  let gce = null;
+  let gce = null, cont = false;   // cont: a próxima imagem é continuação do frame anterior (comentário "EG+", ver gifopt.js)
   while (p < buf.length) {
     const b = buf[p];
     if (b === 0x3B) break;
@@ -538,6 +531,7 @@ function parseGIF(buf) {
       while (p < buf.length && buf[p] !== 0) p += buf[p] + 1;
       p++;
       if (label === 0xFF && frames.length === 0) appExts.push(buf.subarray(start, p));
+      if (label === 0xFE && buf[start + 2] === 3 && buf[start + 3] === 0x45 && buf[start + 4] === 0x47 && buf[start + 5] === 0x2B) cont = true;
     } else if (b === 0x2C) {
       const imgStart = p;
       const x = buf[p + 1] | (buf[p + 2] << 8), y = buf[p + 3] | (buf[p + 4] << 8);
@@ -549,11 +543,14 @@ function parseGIF(buf) {
       const dataStart = p;
       while (p < buf.length && buf[p] !== 0) p += buf[p] + 1;
       p++;
-      frames.push({
+      const fr = {
         x, y, w, h, interlaced: !!(pk & 0x40), lct, minCode, dataStart, imgStart, imgEnd: Math.min(p, buf.length),
         delay: gce ? gce.delay : 0, disposal: gce ? gce.disposal : 0, transp: gce ? gce.transp : -1
-      });
-      gce = null;
+      };
+      const last = frames[frames.length - 1];
+      if (cont && last && last.disposal <= 1) { (last.extra = last.extra || []).push(fr); last.delay += fr.delay; }   // parte do mesmo frame
+      else frames.push(fr);
+      gce = null; cont = false;
     } else p++;
   }
   if (!frames.length) throw new Error('GIF sem frames');
@@ -672,13 +669,40 @@ function blurBox(b, W, H) {
   return { x0, y0, x1, y1 };
 }
 
+// Borrão "leve para o arquivo": o desfoque normal cria centenas de cores novas em degradê (o GIF quase dobrava de tamanho).
+// Aqui o resultado usa só cores que JÁ existem na área (as 64 mais usadas): texto na tela tem bordas suavizadas, com
+// vários tons entre o fundo e a letra, e o desfoque cai nesses tons. Nos testes: borrão +3,6% no arquivo (antes, +31%).
+// Área com poucas cores (texto sem suavização) ganha uma escala de 8 tons entre as duas principais, para o borrão não
+// virar manchas de contorno nítido. Depende só dos pixels da própria área: se ela não muda, o borrão também não.
+const RAMP = 8, FEW = 12, KEEP = 64;
 function blurRegion(rgba, W, H, rx, ry, rw, rh, r) {
   const { x0, y0, x1, y1 } = blurBox({ x: rx, y: ry, w: rw, h: rh }, W, H);
   const w = x1 - x0, h = y1 - y0;
   if (w < 1 || h < 1 || r < 1) return;
   const a = new Uint8ClampedArray(w * h * 4), b = new Uint8ClampedArray(w * h * 4);
   for (let y = 0; y < h; y++) a.set(rgba.subarray(((y0 + y) * W + x0) * 4, ((y0 + y) * W + x1) * 4), y * w * 4);
+  // cores da área antes de borrar
+  const freq = new Map();
+  for (let o = 0; o < a.length; o += 4) if (a[o + 3] >= 128) { const k = (a[o] << 16) | (a[o + 1] << 8) | a[o + 2]; freq.set(k, (freq.get(k) || 0) + 1); }
   for (let it = 0; it < 2; it++) { pass(a, b, w, h, r, true); pass(b, a, w, h, r, false); }
+  if (freq.size) {
+    const top = [...freq.entries()].sort((p, q) => q[1] - p[1]).slice(0, KEEP).map(e => e[0]), pal = top.slice();
+    if (top.length > 1 && freq.size < FEW) {
+      const c1 = top[0], c2 = top[1], ch = (c, s) => (c >> s) & 255;
+      for (let s = 1; s < RAMP; s++) { const t = s / RAMP, m = sh => Math.round(ch(c1, sh) * (1 - t) + ch(c2, sh) * t); pal.push((m(16) << 16) | (m(8) << 8) | m(0)); }
+    }
+    const n = pal.length, pr = new Int32Array(n), pg = new Int32Array(n), pb = new Int32Array(n), near = new Map();
+    pal.forEach((c, i) => { pr[i] = c >> 16; pg[i] = (c >> 8) & 255; pb[i] = c & 255; });
+    for (let o = 0; o < a.length; o += 4) {
+      const k = (a[o] << 16) | (a[o + 1] << 8) | a[o + 2]; let v = near.get(k);
+      if (v === undefined) {
+        let best = 1e9; v = 0;
+        for (let i = 0; i < n; i++) { const dr = a[o] - pr[i], dg = a[o + 1] - pg[i], db = a[o + 2] - pb[i], dd = dr * dr * 2 + dg * dg * 4 + db * db * 3; if (dd < best) { best = dd; v = i; if (!dd) break; } }
+        near.set(k, v);
+      }
+      a[o] = pr[v]; a[o + 1] = pg[v]; a[o + 2] = pb[v];
+    }
+  }
   for (let y = 0; y < h; y++) rgba.set(a.subarray(y * w * 4, (y + 1) * w * 4), ((y0 + y) * W + x0) * 4);
 }
 
@@ -764,8 +788,12 @@ function lzwEncode(idx, minCode) {
   return Uint8Array.from(res);
 }
 
-// Desenha os pixels de um frame original sobre um canvas RGBA (como o leitor de GIF faz).
+// Desenha os pixels de um frame original sobre um canvas RGBA (como o leitor de GIF faz), com as partes, se houver.
 function drawRaw(canvas, g, f) {
+  drawPart(canvas, g, f);
+  if (f.extra) for (const p of f.extra) drawPart(canvas, g, p);
+}
+function drawPart(canvas, g, f) {
   const { W, H } = g, idx = frameIndices(g, f), pal = f.lct || g.gct;
   if (!pal) return;
   for (let yy = 0; yy < f.h; yy++) {
@@ -910,7 +938,7 @@ async function buildGIF(g, kept, opts) {
   for (const e of g.appExts) parts.push(e);
 
   const K = opts.blurColors || 255, tolBlur = opts.blurTol === undefined ? 0 : opts.blurTol;
-  const RAW_TOL = 30;   // diferença máxima (soma RGB) aceita para copiar o frame intacto
+  const RAW_TOL = 0;   // só copia o frame intacto se a imagem sair idêntica
   let sim = new Uint8ClampedArray(W * H * 4), rawN = 0, reN = 0;
   const ref = new Uint8ClampedArray(W * H * 4);   // valor exato que cada pixel deveria ter
 
@@ -927,8 +955,8 @@ async function buildGIF(g, kept, opts) {
     const snap = f.snap || opts.getSnap(f.i);
     const target = f.blurs.length ? applyBlurs(snap, W, H, f.blurs) : snap;
 
-    // 1) tenta copiar o frame original intacto
-    if (!f.blurs.length) {
+    // 1) tenta copiar o frame original intacto (frame gravado em partes não: o atraso de cada parte precisaria mudar)
+    if (!f.blurs.length && !info.extra) {
       const trial = sim.slice();
       drawRaw(trial, g, info);
       let ok = true;
@@ -982,10 +1010,16 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 // Refaz a compressão do GIF inteiro a partir das imagens compostas (o que o leitor mostra em cada frame).
 //  - tol 0 = SEM PERDA: cada frame sai idêntico, pixel a pixel (e o resultado é conferido; se algo diferir, fica o original)
 //  - tol > 0 = com perda controlada: pixels que mudaram até "tol" (soma |dR|+|dG|+|dB|) contam como "não mudou"
+//  - gap > 0 (com perda, só na compressão): no máximo um frame a cada "gap" centésimos (10 = até 10 fps); os outros
+//    são pulados e o anterior fica mais tempo na tela (a duração total não muda e o último frame sempre aparece)
 // Técnicas: grava só o retângulo que mudou; frames sem mudança viram duração do anterior; uma paleta exata para o GIF
 // inteiro quando cabe (senão, paleta exata por frame); para cada frame testa 3 jeitos de preencher o que não mudou
 // (transparente, a cor que já está na tela, ou repetir o vizinho) e fica com o menor; paleta local menor quando
 // o frame usa poucas cores (códigos LZW mais curtos).
+// Frame com mais de 255 cores (tela com degradês, sombras e texto suavizado) sem perda: é gravado em PARTES, cada uma um
+// bloco da imagem (metade, quarto...) que cabe em 255 cores exatas. As partes do meio duram 2 centésimos (o mínimo que os
+// navegadores respeitam) e levam antes um comentário "EG+", para o editor saber que são continuação do mesmo frame
+// (ver parseGIF em gifcore.js).
 (function (root) {
 'use strict';
 
@@ -1060,20 +1094,26 @@ function makePal(list) {
   return { list, n, idx, has: key => exactMap.get(key) };
 }
 const effDelay = d => d < 2 ? 10 : d;   // como os navegadores tocam atraso 0 ou 1
+const PART_MARK = Uint8Array.from([0x21, 0xFE, 3, 0x45, 0x47, 0x2B, 0]);   // comentário "EG+" = continuação do frame anterior
+const keyOf = (d, q) => (d[q] << 16) | (d[q + 1] << 8) | d[q + 2];
 
 // src: { W, H, N, at(i) -> RGBA composto (Uint8ClampedArray W*H*4, ou Promise dele; lido em ordem), delay(i) -> centésimos, loop: extensão NETSCAPE (bytes) ou null }
-// o: { tol, tick(fase, i, n) (pode ser async), cancelled() }
-// devolve { bytes, exact (false se algum pixel não pôde sair idêntico), map (frame de entrada -> frame de saída) }
+// o: { tol, gap, quantize, tick(fase, i, n) (pode ser async), cancelled() }
+//    quantize: true = frame com mais de 255 cores é reduzido para 255 (melhor paleta, median cut) em vez de ir em partes.
+//    Usado só na gravação de tela, que ainda não é GIF: lá a redução é inevitável e quase sempre invisível (nos testes,
+//    95% dos pixels que mudam diferem em 1 nível de 255), enquanto as partes deixavam o arquivo ~50% maior.
+// devolve { bytes, exact (false se algum pixel não pôde sair idêntico), map (frame de entrada -> frame de saída),
+//           extraCs (centésimos a mais na duração total, por causa das partes de frames com muitas cores) }
 async function encode(src, o) {
   o = o || {};
-  const { W, H, N } = src, P = W * H, tol = o.tol || 0, tick = o.tick || (() => {});
+  const { W, H, N } = src, P = W * H, tol = o.tol || 0, gap = o.gap || 0, tick = o.tick || (() => {});
   let exact = true;
   const ref = new Uint8ClampedArray(P * 4); let have = false;   // última cor gravada de cada pixel (valor de entrada)
   const changed = (d, q) => !have || (d[q + 3] < 128) !== (ref[q + 3] < 128) ||
     (d[q + 3] >= 128 && Math.abs(d[q] - ref[q]) + Math.abs(d[q + 1] - ref[q + 1]) + Math.abs(d[q + 2] - ref[q + 2]) > tol);
 
   // ---- passo 1: cores dos pixels que mudam (para a paleta) ----
-  const colors = new Map(); let overflow = false;
+  const colors = new Map(); let overflow = false;   // cor -> quantas vezes aparece (até 1 milhão de cores diferentes)
   const hAll = hist();
   for (let i = 0; i < N; i++) {
     if (o.cancelled && o.cancelled()) throw new Error('CANCELADO');
@@ -1082,17 +1122,27 @@ async function encode(src, o) {
       if (!changed(d, q)) continue;
       ref[q] = d[q]; ref[q + 1] = d[q + 1]; ref[q + 2] = d[q + 2]; ref[q + 3] = d[q + 3];
       if (d[q + 3] < 128) continue;
-      if (!overflow) { const key = (d[q] << 16) | (d[q + 1] << 8) | d[q + 2]; if (!colors.has(key)) { colors.set(key, 1); if (colors.size > 255) overflow = true; } }
+      const key = keyOf(d, q), c = colors.get(key);
+      if (c) colors.set(key, c + 1); else if (colors.size < 1048576) { colors.set(key, 1); if (colors.size > 255) overflow = true; }
       hAll.add(d[q], d[q + 1], d[q + 2]);
     }
     have = true;
     if (i % 4 === 3) await tick(1, i + 1, N);
   }
   // sem perda e com mais de 255 cores no total: paleta exata por frame. Senão: uma paleta para o GIF inteiro.
+  // Com perda e cores demais: as 200 cores mais usadas ficam exatas e 55 cobrem as raras (median cut), em vez de arredondar tudo.
   const local = overflow && tol === 0;
   let gpal = null;
   if (!local) {
-    const list = []; if (!overflow) for (const k of colors.keys()) list.push(k >> 16, (k >> 8) & 255, k & 255); else list.push(...medianCut(hAll, 255));
+    const list = [];
+    if (!overflow) for (const k of colors.keys()) list.push(k >> 16, (k >> 8) & 255, k & 255);
+    else {
+      const top = [...colors.entries()].sort((a, b) => b[1] - a[1]).slice(0, 200), inTop = new Set();
+      for (const [k] of top) { list.push(k >> 16, (k >> 8) & 255, k & 255); inTop.add(k); }
+      const hTail = hist();
+      for (const [k, n] of colors) if (!inTop.has(k)) for (let j = 0; j < Math.min(n, 64); j++) hTail.add(k >> 16, (k >> 8) & 255, k & 255);
+      list.push(...medianCut(hTail, 255 - top.length));
+    }
     gpal = makePal(list);
   }
   colors.clear();
@@ -1107,49 +1157,45 @@ async function encode(src, o) {
   ref.fill(0); have = false;
   const disp = new Int32Array(P).fill(-1);   // cor (RGB) que o leitor mostra em cada pixel; -1 = transparente
   const mask = new Uint8Array(P), map = new Int32Array(N);
-  let pend = null, written = 0;
+  let pend = null, written = 0, extraCs = 0, tNow = 0, nextT = 0;   // tNow = quando o frame i começa (centésimos)
+  // grava o frame pendente; com várias partes, as do meio duram 2 centésimos e a última fica com o resto
   const flush = () => {
     if (!pend) return;
-    parts.push(Uint8Array.from([0x21, 0xF9, 4, (1 << 2) | (pend.t >= 0 ? 1 : 0), ...u16(Math.min(65535, pend.delay)), Math.max(0, pend.t), 0]));
-    parts.push(Uint8Array.from([0x2C, ...u16(pend.x), ...u16(pend.y), ...u16(pend.w), ...u16(pend.h), pend.lct ? 0x80 | (pend.lbits - 1) : 0]));
-    if (pend.lct) parts.push(pend.lct);
-    parts.push(pend.data); written++; pend = null;
+    const m = pend.parts.length, last = Math.max(2, pend.delay - 2 * (m - 1));
+    if (m > 1) extraCs += Math.max(0, 2 * (m - 1) + last - effDelay(pend.delay));
+    pend.parts.forEach((pt, j) => {
+      const dl = j < m - 1 ? 2 : (m > 1 ? last : pend.delay);
+      if (j > 0) parts.push(PART_MARK);
+      parts.push(Uint8Array.from([0x21, 0xF9, 4, (1 << 2) | (pt.t >= 0 ? 1 : 0), ...u16(Math.min(65535, dl)), Math.max(0, pt.t), 0]));
+      parts.push(Uint8Array.from([0x2C, ...u16(pt.x), ...u16(pt.y), ...u16(pt.w), ...u16(pt.h), pt.lct ? 0x80 | (pt.lbits - 1) : 0]));
+      if (pt.lct) parts.push(pt.lct);
+      parts.push(pt.data);
+    });
+    written++; pend = null;
   };
-  for (let i = 0; i < N; i++) {
-    if (o.cancelled && o.cancelled()) throw new Error('CANCELADO');
-    const d = await src.at(i); let x0 = W, y0 = H, x1 = -1, y1 = -1;
-    mask.fill(0);
-    for (let y = 0, p = 0; y < H; y++) for (let x = 0; x < W; x++, p++) {
-      const q = p * 4; if (!changed(d, q)) continue;
-      if (d[q + 3] < 128) { exact = false; continue; }   // GIF sem "apagar" não volta a ficar transparente
-      mask[p] = 1; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+  // cores (exatas) dos pixels que mudaram dentro do retângulo; null se passar de 255
+  const rectColors = (d, a0, b0, a1, b1) => {
+    const seen = new Set();
+    for (let y = b0; y <= b1; y++) for (let x = a0, p = y * W + a0; x <= a1; x++, p++) {
+      if (!mask[p]) continue; seen.add(keyOf(d, p * 4)); if (seen.size > 255) return null;
     }
-    if (x1 < 0) {   // nada mudou: só estica a duração do frame anterior
-      if (pend) { pend.delay = effDelay(pend.delay) + effDelay(src.delay(i)); map[i] = written; continue; }
-      x0 = y0 = x1 = y1 = 0;   // primeiro frame totalmente transparente: grava 1 pixel transparente
-    }
-    flush(); map[i] = written;
-    const w = x1 - x0 + 1, h = y1 - y0 + 1, n = w * h;
-    // paleta deste frame
-    let pal = gpal, T = gT, bits = gBits;
-    if (local) {
-      const list = [], seen = new Map(); let over = false;
-      for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) {
-        if (!mask[p]) continue; const q = p * 4, key = (d[q] << 16) | (d[q + 1] << 8) | d[q + 2];
-        if (!seen.has(key)) { seen.set(key, 1); if (seen.size > 255) { over = true; break; } list.push(d[q], d[q + 1], d[q + 2]); }
-      }
-      if (over) {   // mais de 255 cores num frame só: reduz este frame (não fica exato)
-        exact = false; const hf = hist();
-        for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) {
-          if (!mask[p]) continue; const q = p * 4; hf.add(d[q], d[q + 1], d[q + 2]);
-        }
-        list.length = 0; list.push(...medianCut(hf, 255));
-      }
-      pal = makePal(list); T = pal.n; bits = bitsFor(pal.n + 1);
-    }
-    const minCode = Math.max(2, bits);
-    // A = o que não mudou fica transparente; B = repete a cor que já está na tela (se existir na paleta);
-    // C = como A, mas repete a cor da tela quando ela é igual à do pixel anterior (sequências mais longas)
+    return seen;
+  };
+  // divide o retângulo ao meio (no lado maior) até cada bloco ter no máximo 255 cores; cada bloco fica justo nos pixels que mudaram
+  function splitBlocks(d, a0, b0, a1, b1) {
+    let c0 = W, r0 = H, c1 = -1, r1 = -1;
+    for (let y = b0; y <= b1; y++) for (let x = a0, p = y * W + a0; x <= a1; x++, p++)
+      if (mask[p]) { if (x < c0) c0 = x; if (x > c1) c1 = x; if (y < r0) r0 = y; if (y > r1) r1 = y; }
+    if (c1 < 0) return [];
+    const keys = rectColors(d, c0, r0, c1, r1);
+    if (keys || (c0 === c1 && r0 === r1)) return [{ x0: c0, y0: r0, x1: c1, y1: r1, keys: keys || new Set([keyOf(d, (r0 * W + c0) * 4)]) }];
+    if (c1 - c0 >= r1 - r0) { const m = (c0 + c1) >> 1; return [...splitBlocks(d, c0, r0, m, r1), ...splitBlocks(d, m + 1, r0, c1, r1)]; }
+    const m = (r0 + r1) >> 1; return [...splitBlocks(d, c0, r0, c1, m), ...splitBlocks(d, c0, m + 1, c1, r1)];
+  }
+  // grava um retângulo com a paleta dada. A = o que não mudou fica transparente; B = repete a cor que já está na tela
+  // (se existir na paleta); C = como A, mas repete a cor da tela quando ela é igual à do pixel anterior (sequências mais longas)
+  function encRect(d, x0, y0, x1, y1, pal, T, bits, isLocal) {
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, n = w * h, minCode = Math.max(2, bits);
     const A = new Uint8Array(n), B = new Uint8Array(n), C = new Uint8Array(n);
     let k = 0, lastC = -1, diffB = false, diffC = false;
     for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++, k++) {
@@ -1162,9 +1208,9 @@ async function encode(src, o) {
     let best = A, data = lzw(A, minCode);
     if (diffB) { const db = lzw(B, minCode); if (db.length < data.length) { data = db; best = B; } }
     if (diffC) { const dc = lzw(C, minCode); if (dc.length < data.length) { data = dc; best = C; } }
-    // paleta local menor, quando o frame usa poucas cores
+    // paleta local menor, quando o retângulo usa poucas cores
     let lct = null, lbits = 0, t = T;
-    if (local) { lct = new Uint8Array((1 << bits) * 3); lct.set(pal.list); lbits = bits; }
+    if (isLocal) { lct = new Uint8Array((1 << bits) * 3); lct.set(pal.list); lbits = bits; }
     else {
       const seenI = new Int16Array(256).fill(-1), used = [];
       let ok = true;
@@ -1173,32 +1219,80 @@ async function encode(src, o) {
       if (ok && lb < bits) {
         const m = new Uint8Array(n); for (let j = 0; j < n; j++) m[j] = seenI[best[j]];
         const l = new Uint8Array((1 << lb) * 3);
-        used.forEach((v, j) => { if (v < gpal.n) { l[j * 3] = gpal.list[v * 3]; l[j * 3 + 1] = gpal.list[v * 3 + 1]; l[j * 3 + 2] = gpal.list[v * 3 + 2]; } });
+        used.forEach((v, j) => { if (v < pal.n) { l[j * 3] = pal.list[v * 3]; l[j * 3 + 1] = pal.list[v * 3 + 1]; l[j * 3 + 2] = pal.list[v * 3 + 2]; } });
         const dl = lzw(m, Math.max(2, lb));
         if (dl.length + l.length < data.length) {
           data = dl; lct = l; lbits = lb;
-          // transparente: o índice local de T; se o frame não usa T, um índice livre; se não houver livre, sem transparência
+          // transparente: o índice local de T; se não usa T, um índice livre; se não houver livre, sem transparência
           t = seenI[T] >= 0 ? seenI[T] : used.length < (1 << lb) ? used.length : -1;
         }
       }
     }
+    return { x: x0, y: y0, w, h, data, lct, lbits, t };
+  }
+  for (let i = 0; i < N; i++) {
+    if (o.cancelled && o.cancelled()) throw new Error('CANCELADO');
+    // menos frames por segundo (só na compressão): grade de "gap" centésimos; frame que cai antes da próxima vaga é pulado (nunca o último)
+    const tI = tNow; tNow += effDelay(src.delay(i));
+    if (gap) {
+      if (pend && i < N - 1 && tI < nextT) { pend.delay = effDelay(pend.delay) + effDelay(src.delay(i)); map[i] = written; continue; }
+      nextT = Math.max(nextT + gap, tI + 1); while (nextT <= tI) nextT += gap;
+    }
+    const d = await src.at(i); let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    mask.fill(0);
+    for (let y = 0, p = 0; y < H; y++) for (let x = 0; x < W; x++, p++) {
+      const q = p * 4; if (!changed(d, q)) continue;
+      if (d[q + 3] < 128) { exact = false; continue; }   // GIF sem "apagar" não volta a ficar transparente
+      mask[p] = 1; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    if (x1 < 0) {   // nada mudou: só estica a duração do frame anterior
+      if (pend) { pend.delay = effDelay(pend.delay) + effDelay(src.delay(i)); map[i] = written; continue; }
+      x0 = y0 = x1 = y1 = 0;   // primeiro frame totalmente transparente: grava 1 pixel transparente
+    }
+    flush(); map[i] = written;
+    // Sem perda com paleta por frame: se o frame tiver mais de 255 cores, ele é dividido em BLOCOS (metades, até cada
+    // bloco caber em 255 cores) e cada bloco vira uma parte, com as próprias cores exatas. Cada pixel é gravado uma vez só.
+    let fparts, qpal = null;
+    if (!local) fparts = [encRect(d, x0, y0, x1, y1, gpal, gT, gBits, false)];
+    else {
+      fparts = [];
+      let blocks = null;
+      if (o.quantize) {
+        const keys = rectColors(d, x0, y0, x1, y1);
+        if (!keys) {   // reduz este frame para 255 cores (não fica exato)
+          exact = false; const hf = hist();
+          for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) if (mask[p]) { const q = p * 4; hf.add(d[q], d[q + 1], d[q + 2]); }
+          const list = medianCut(hf, 255), pal = makePal(list);
+          fparts.push(encRect(d, x0, y0, x1, y1, pal, pal.n, bitsFor(pal.n + 1), true));
+          qpal = pal; blocks = [];
+        }
+      }
+      for (const bk of blocks || splitBlocks(d, x0, y0, x1, y1)) {
+        const list = []; for (const k of bk.keys) list.push(k >> 16, (k >> 8) & 255, k & 255);
+        const pal = makePal(list);
+        fparts.push(encRect(d, bk.x0, bk.y0, bk.x1, bk.y1, pal, pal.n, bitsFor(pal.n + 1), true));
+      }
+    }
     // o que o leitor passa a mostrar
     for (let y = y0; y <= y1; y++) for (let x = x0, p = y * W + x0; x <= x1; x++, p++) {
-      if (!mask[p]) continue; const q = p * 4, v = pal.idx(d[q], d[q + 1], d[q + 2]);
-      disp[p] = (pal.list[v * 3] << 16) | (pal.list[v * 3 + 1] << 8) | pal.list[v * 3 + 2];
+      if (!mask[p]) continue; const q = p * 4;
+      if (qpal) { const v = qpal.idx(d[q], d[q + 1], d[q + 2]); disp[p] = (qpal.list[v * 3] << 16) | (qpal.list[v * 3 + 1] << 8) | qpal.list[v * 3 + 2]; }   // cor reduzida
+      else if (local) disp[p] = keyOf(d, q);   // cores exatas
+      else { const v = gpal.idx(d[q], d[q + 1], d[q + 2]); disp[p] = (gpal.list[v * 3] << 16) | (gpal.list[v * 3 + 1] << 8) | gpal.list[v * 3 + 2]; }
       ref[q] = d[q]; ref[q + 1] = d[q + 1]; ref[q + 2] = d[q + 2]; ref[q + 3] = 255;
     }
     have = true;
-    pend = { x: x0, y: y0, w, h, data, lct, lbits, t, delay: src.delay(i) };
+    pend = { parts: fparts, delay: src.delay(i) };
     if (i % 4 === 3) await tick(2, i + 1, N);
   }
   flush(); parts.push(Uint8Array.from([0x3B]));
   let tot = 0; for (const p of parts) tot += p.length;
   const bytes = new Uint8Array(tot); let off = 0; for (const p of parts) { bytes.set(p, off); off += p.length; }
-  return { bytes, exact, map, written };
+  return { bytes, exact, map, written, extraCs };
 }
 // confere se o GIF gerado mostra exatamente as mesmas imagens (e durações) que a entrada
-async function verify(bytes, src, map, tick) {
+// extraCs: centésimos a mais aceitos na duração total (partes de frames com muitas cores)
+async function verify(bytes, src, map, tick, extraCs) {
   const g = root.GifCore.parseGIF(bytes), c = root.GifCore.makeComposer(g, 1.5e8), P4 = src.W * src.H * 4;
   if (g.W !== src.W || g.H !== src.H) return false;
   for (let i = 0; i < src.N; i++) {
@@ -1212,7 +1306,7 @@ async function verify(bytes, src, map, tick) {
   }
   // duração total igual (como os navegadores tocam)
   let da = 0, db = 0; for (let i = 0; i < src.N; i++) da += effDelay(src.delay(i)); for (const f of g.frames) db += effDelay(f.delay);
-  return da === db;
+  return db >= da && db - da <= (extraCs || 0);
 }
 
 // entrada a partir dos bytes de um GIF
@@ -1227,18 +1321,26 @@ async function lossless(bytes, o) {
   const src = fromBytes(bytes);
   const r = await encode(src, { tol: 0, tick: o.tick, cancelled: o.cancelled });
   if (!r.exact || r.bytes.length >= bytes.length) return { bytes, optimized: false };
-  if (!(await verify(r.bytes, fromBytes(bytes), r.map, o.tick))) return { bytes, optimized: false };
+  if (!(await verify(r.bytes, fromBytes(bytes), r.map, o.tick, r.extraCs))) return { bytes, optimized: false };
   return { bytes: r.bytes, optimized: true };
 }
-
-// COM PERDA: comprime com a tolerância tol
-async function lossy(bytes, tol, o) {
+// SEM PERDA a partir de imagens (o editor, com borrões e frames apagados): devolve null se não deu para sair idêntico
+async function fromFrames(src, o) {
   o = o || {};
-  const r = await encode(fromBytes(bytes), { tol, tick: o.tick, cancelled: o.cancelled });
+  const r = await encode(src, { tol: 0, tick: o.tick, cancelled: o.cancelled });
+  if (!r.exact) return null;
+  if (!(await verify(r.bytes, src, r.map, o.tick, r.extraCs))) return null;
+  return r.bytes;
+}
+
+// COM PERDA: comprime no nível lv = { tol, gap }
+async function lossy(bytes, lv, o) {
+  o = o || {};
+  const r = await encode(fromBytes(bytes), { tol: lv.tol, gap: lv.gap, tick: o.tick, cancelled: o.cancelled });
   return r.bytes.length < bytes.length ? r.bytes : bytes;
 }
 
-root.GifOpt = { encode, verify, fromBytes, lossless, lossy, lzw };
+root.GifOpt = { encode, verify, fromBytes, fromFrames, lossless, lossy, lzw, PART_MARK };
 })(typeof window !== 'undefined' ? window : globalThis);
 // Converte vídeo (MP4, WebM...) em GIF, tudo dentro do navegador.
 // Mesma ideia do ffmpeg:  fps=15,scale=1280:-1, palettegen=stats_mode=diff, paletteuse=dither=none, diff_mode=rectangle
@@ -1762,24 +1864,45 @@ async function loadVideo(file, noAsk) {   // noAsk: quem chama já tratou as alt
   if (out && out.cancel) say('Conversão cancelada. Nenhum arquivo foi baixado.');
   else if (out) showResult(out.title, out.lines, out.kind);
 }
-// vários vídeos: converte um por um e baixa cada GIF (sem abrir no editor)
+// vários vídeos: converte um por um (sem abrir no editor). Os que ficam até 2,9 MB são baixados na hora; os maiores
+// esperam o fim e a pessoa escolhe UMA vez o que fazer com todos eles (comprimir, salvar assim mesmo ou não salvar).
 async function convertBatch(vids) {
   if (dirty && !confirm('Você tem alterações que ainda não foram salvas no editor.\n\nA conversão em lote não usa o editor, então elas continuam como estão.\n\nQuer continuar?')) return;
-  let ok = 0, parou = false; const linhas = [];
+  let ok = 0, parou = false; const linhas = [], grandes = [];
   await work(`Convertendo ${vids.length} vídeos…`, async () => {
     for (let i = 0; i < vids.length; i++) {
       if (cancelled) break;
       try {
         const r = await VideoGif.convert(vids[i], convOpts(`Vídeo ${i + 1} de ${vids.length}: `)), nm = baseName(vids[i].name) + '.gif';
-        let out = await optimizeLossless(r.bytes), extra = '';   // em lote não dá para perguntar: comprime sozinho se passar do limite
-        if (out.length > LIMIT) { const c = await compressToFit(out); out = c.bytes; extra = c.fits ? `, comprimido no nível ${c.level} para caber em ${LIMIT_TXT}` : `, comprimido ao máximo e ainda acima de ${LIMIT_TXT}`; }
-        saveGif(out, nm); ok++; linhas.push(`✓ ${vids[i].name} → ${nm} (${kb(out.length)}${extra})`);
+        const out = await optimizeLossless(r.bytes);
+        if (out.length > LIMIT) { grandes.push({ nome: vids[i].name, nm, bytes: out }); continue; }
+        saveGif(out, nm); ok++; linhas.push(`✓ ${vids[i].name} → ${nm} (${kb(out.length)})`);
         await sleep(300);
       } catch (err) { if (err.message === 'CANCELADO') break; linhas.push(`✗ ${vids[i].name}: ${errMsg(err)}`); }
     }
     parou = cancelled;
-    if (!ok) return false;
-  }, 'Conversão concluída!', { cancel: true });
+    if (!ok && !grandes.length) return false;
+  }, grandes.length ? null : 'Conversão concluída!', { cancel: true });
+  if (grandes.length && !parou) {
+    const a = await askBig(grandes.length === 1 ? `Um GIF passou de ${LIMIT_TXT}` : `${grandes.length} GIFs passaram de ${LIMIT_TXT}`, [
+      ...grandes.map(x => `${x.nm}: ${mb(x.bytes.length)}`),
+      grandes.length === 1 ? 'Ele já foi diminuído ao máximo sem perder qualidade.' : 'Eles já foram diminuídos ao máximo sem perder qualidade.',
+      `Posso comprimir ${grandes.length === 1 ? 'esse GIF' : 'cada um'} só o necessário para caber em ${LIMIT_TXT} (primeiro ignorando mudanças muito pequenas entre frames; se não bastar, com menos frames por segundo).`],
+      true, 'Salvar assim mesmo');
+    if (a === 'no') for (const x of grandes) linhas.push(`– ${x.nome}: não foi salvo (${mb(x.bytes.length)}, acima de ${LIMIT_TXT})`);
+    else await work('Salvando os GIFs grandes…', async () => {
+      for (const x of grandes) {
+        if (cancelled) { linhas.push(`– ${x.nome}: não foi salvo (cancelado)`); continue; }
+        let out = x.bytes, extra = '';
+        if (a === 'comp') {
+          try { const c = await compressToFit(x.bytes); out = c.bytes; extra = c.fits ? `, comprimido no nível ${c.level}` : `, comprimido ao máximo e ainda acima de ${LIMIT_TXT}`; }
+          catch (err) { if (err.message !== 'CANCELADO') throw err; linhas.push(`– ${x.nome}: não foi salvo (cancelado)`); continue; }
+        }
+        saveGif(out, x.nm); ok++; linhas.push(`✓ ${x.nome} → ${x.nm} (${kb(out.length)}${extra})`);
+        await sleep(300);
+      }
+    }, 'Conversão concluída!', { cancel: a === 'comp' });
+  } else if (grandes.length) for (const x of grandes) linhas.push(`– ${x.nome}: não foi salvo (cancelado)`);
   const resumo = ok ? `${ok} de ${vids.length} GIFs foram baixados (pasta de downloads).` : 'Nenhum arquivo foi baixado.';
   showResult(parou ? 'Conversão cancelada' : ok === vids.length ? 'Vídeos convertidos' : 'A conversão terminou com problemas', [resumo, ...linhas],
     ok === vids.length && !parou ? 'ok' : ok ? 'warn' : 'err');
@@ -1996,7 +2119,7 @@ async function finishCapture(r, secs) {
   let bytes = null, erro = cap.err, desistiu = false;
   if (!erro) await work('Transformando a gravação em GIF…', async () => {
     try {
-      const res = await GifOpt.encode(captureSource(cap), { tol: 0, cancelled: () => cancelled,
+      const res = await GifOpt.encode(captureSource(cap), { tol: 0, quantize: true, cancelled: () => cancelled,
         tick: async (ph, i, n) => { progress((ph - 1 + i / n) / 2, `Frame ${i} de ${n}`); await sleep(0); } });
       bytes = res.bytes;
       if (!keep) return;
@@ -2251,9 +2374,13 @@ function saveGif(bytes, name) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 // ---------- tamanho do arquivo ----------
-// Ao salvar: o GIF é sempre otimizado SEM PERDA (conferido pixel a pixel). Se passar de LIMIT, a pessoa escolhe se comprime.
+// Ao salvar: o GIF é montado direto das imagens do editor, SEM PERDA (cada frame é conferido pixel a pixel) e no menor
+// tamanho que o otimizador consegue. Se passar de LIMIT, a pessoa escolhe se comprime (com perda) ou salva assim mesmo.
 const LIMIT = 2.9 * 1048576, LIMIT_TXT = '2,9 MB';
-const TOLS = [6, 12, 18, 24, 36, 48, 64];   // níveis de compressão com perda, do mais leve ao mais forte
+// níveis de compressão com perda, do mais leve ao mais forte: tol = ignora mudanças pequenas entre frames (soma RGB);
+// gap = menos frames por segundo (um frame a cada gap centésimos: 10 = até 10 fps). Busca o mais leve que cabe.
+// Nos testes, mudança pequena ajuda em vídeo (ruído) e menos fps ajuda em rolagem de tela (a que mais pesa).
+const LEVELS = [{ tol: 12 }, { tol: 24 }, { tol: 24, gap: 10 }, { tol: 32, gap: 13 }, { tol: 48, gap: 20 }, { tol: 64, gap: 30 }];
 // mostra o andamento do otimizador (fases 1 e 2 = gravar, 3 = conferir)
 const optTick = (label) => async (ph, i, n) => {
   $('busyt').textContent = ph === 3 ? 'Conferindo se ficou idêntico…' : label;
@@ -2264,19 +2391,48 @@ async function optimizeLossless(bytes) {
   const r = await GifOpt.lossless(bytes, { tick: optTick('Diminuindo o arquivo sem perder qualidade…'), cancelled: () => cancelled });
   return r.bytes;
 }
+// imagens do editor para o otimizador: os frames que ficaram, com os borrões, e as durações (somando as dos apagados, se pedido)
+function editorSource() {
+  const kept = frames.slice(), merge = $('merge').checked, N0 = g.frames.length;
+  const delays = kept.map((f, j) => {
+    let d = g.frames[f.i].delay;
+    if (merge) { const end = j + 1 < kept.length ? kept[j + 1].i : N0; for (let k = f.i + 1; k < end; k++) d += g.frames[k].delay; }
+    return Math.min(65535, d);
+  });
+  const loop = g.appExts.find(e => e.length > 13 && String.fromCharCode(...e.subarray(3, 14)) === 'NETSCAPE2.0') || null;
+  return { W: g.W, H: g.H, N: kept.length, delay: j => delays[j], loop,
+    at: j => { const f = kept[j], s = comp.at(f.i); return f.blurs.length ? GifCore.applyBlurs(s, g.W, g.H, f.blurs) : s; } };
+}
+// nada mudou em relação ao arquivo aberto (nenhum borrão, nenhum frame apagado)
+const untouched = () => frames.length === g.frames.length && frames.every((f, j) => f.i === j && !f.blurs.length);
+// GIF sem perda a partir do editor. Se o otimizador não conseguir deixar idêntico (GIF com transparência que volta a
+// aparecer, por exemplo), usa o montador antigo, que copia os frames originais. Nunca fica maior que o arquivo aberto sem edição.
+async function buildLossless() {
+  let out = await GifOpt.fromFrames(editorSource(), { tick: optTick('Montando o GIF sem perder qualidade…'), cancelled: () => cancelled });
+  if (!out) {
+    const r = await GifCore.buildGIF(g, frames, {
+      mergeDelay: $('merge').checked, getSnap: i => comp.at(i),
+      tick: async (j, t) => { progress(j / t, `Montando: frame ${j} de ${t}`); await sleep(0); }
+    });
+    if (cancelled) throw new Error('CANCELADO');
+    out = await optimizeLossless(r.bytes);
+  }
+  if (untouched() && srcBytes.length <= out.length) out = srcBytes;
+  return out;
+}
 // procura a compressão mais leve que faz o GIF caber em LIMIT (busca binária nos níveis). Devolve { bytes, level, fits }
 async function compressToFit(bytes) {
-  let lo = 0, hi = TOLS.length - 1, best = null, smallest = null, tries = 0;
+  let lo = 0, hi = LEVELS.length - 1, best = null, smallest = null, tries = 0;
   const tryLevel = async k => {
     tries++;
-    const out = await GifOpt.lossy(bytes, TOLS[k], {
+    const out = await GifOpt.lossy(bytes, LEVELS[k], {
       cancelled: () => cancelled,
-      tick: async (ph, i, n) => { $('busyt').textContent = `Comprimindo (tentativa ${tries})…`; progress((ph - 1 + i / n) / 2, `Nível ${k + 1} de ${TOLS.length} · frame ${i} de ${n}`); await sleep(0); }
+      tick: async (ph, i, n) => { $('busyt').textContent = `Comprimindo (tentativa ${tries})…`; progress((ph - 1 + i / n) / 2, `Nível ${k + 1} de ${LEVELS.length} · frame ${i} de ${n}`); await sleep(0); }
     });
     if (!smallest || out.length < smallest.bytes.length) smallest = { bytes: out, level: k + 1 };
     return out;
   };
-  let k = 3;   // começa no meio
+  let k = 2;   // começa no meio
   while (lo <= hi) {
     const out = await tryLevel(k);
     if (out.length <= LIMIT) { best = { bytes: out, level: k + 1 }; hi = k - 1; } else lo = k + 1;
@@ -2305,15 +2461,8 @@ async function doExport() {
   const name = srcName + (fromVideo ? '' : '-editado') + '.gif';
   let bytes = null, erro = null;
   const ok = await work('Salvando o seu GIF…', async () => {
-    try {
-      const q = $('qual').value.split(',');
-      const r = await GifCore.buildGIF(g, frames, {
-        mergeDelay: $('merge').checked, blurColors: +q[0], blurTol: +q[1], getSnap: i => comp.at(i),
-        tick: async (j, t) => { progress(j / t, `Montando: frame ${j} de ${t}`); await sleep(0); }
-      });
-      if (cancelled) return false;
-      bytes = await optimizeLossless(r.bytes);
-    } catch (err) { if (err.message !== 'CANCELADO') erro = err; return false; }
+    try { bytes = await buildLossless(); }
+    catch (err) { if (err.message !== 'CANCELADO') erro = err; return false; }
   }, null, { cancel: true });
   if (erro) { say('Não consegui salvar o GIF. (' + erro.message + ')', 'err'); draw(); return; }
   if (!ok) { say('Salvamento cancelado. Nada foi salvo.'); draw(); return; }
@@ -2321,7 +2470,7 @@ async function doExport() {
   if (bytes.length > LIMIT) {
     const a = await askBig(`O GIF ficou com ${mb(bytes.length)}`, [
       `Isso passa do limite de ${LIMIT_TXT}. Ele já foi diminuído ao máximo sem perder qualidade.`,
-      `Posso comprimir só o necessário para caber em ${LIMIT_TXT}. Isso perde um pouco de qualidade: cores parecidas se juntam e mudanças muito pequenas entre frames são ignoradas.`,
+      `Posso comprimir só o necessário para caber em ${LIMIT_TXT}, sempre do jeito mais leve que resolver: primeiro ignorando mudanças muito pequenas entre frames e, se ainda não couber, com menos frames por segundo (o movimento fica um pouco menos suave).`,
       'Outra saída sem perda é apagar frames que não fazem falta.'], true, `Salvar assim mesmo (${mb(bytes.length)})`);
     if (a === 'no') { say('Nada foi salvo. O GIF continua aberto no editor.'); draw(); return; }
     if (a === 'comp') {
@@ -2338,7 +2487,7 @@ async function doExport() {
           false, `Salvar o comprimido (${mb(res.bytes.length)})`);
         if (a2 !== 'keep') { say('Nada foi salvo. O GIF continua aberto no editor.'); draw(); return; }
       }
-      note = ` Comprimido no nível ${res.level} de ${TOLS.length}.`;
+      note = ` Comprimido no nível ${res.level} de ${LEVELS.length}.`;
       bytes = res.bytes;
     }
   }

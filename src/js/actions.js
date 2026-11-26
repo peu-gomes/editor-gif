@@ -115,9 +115,13 @@ function saveGif(bytes, name) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 // ---------- tamanho do arquivo ----------
-// Ao salvar: o GIF é sempre otimizado SEM PERDA (conferido pixel a pixel). Se passar de LIMIT, a pessoa escolhe se comprime.
+// Ao salvar: o GIF é montado direto das imagens do editor, SEM PERDA (cada frame é conferido pixel a pixel) e no menor
+// tamanho que o otimizador consegue. Se passar de LIMIT, a pessoa escolhe se comprime (com perda) ou salva assim mesmo.
 const LIMIT = 2.9 * 1048576, LIMIT_TXT = '2,9 MB';
-const TOLS = [6, 12, 18, 24, 36, 48, 64];   // níveis de compressão com perda, do mais leve ao mais forte
+// níveis de compressão com perda, do mais leve ao mais forte: tol = ignora mudanças pequenas entre frames (soma RGB);
+// gap = menos frames por segundo (um frame a cada gap centésimos: 10 = até 10 fps). Busca o mais leve que cabe.
+// Nos testes, mudança pequena ajuda em vídeo (ruído) e menos fps ajuda em rolagem de tela (a que mais pesa).
+const LEVELS = [{ tol: 12 }, { tol: 24 }, { tol: 24, gap: 10 }, { tol: 32, gap: 13 }, { tol: 48, gap: 20 }, { tol: 64, gap: 30 }];
 // mostra o andamento do otimizador (fases 1 e 2 = gravar, 3 = conferir)
 const optTick = (label) => async (ph, i, n) => {
   $('busyt').textContent = ph === 3 ? 'Conferindo se ficou idêntico…' : label;
@@ -128,19 +132,48 @@ async function optimizeLossless(bytes) {
   const r = await GifOpt.lossless(bytes, { tick: optTick('Diminuindo o arquivo sem perder qualidade…'), cancelled: () => cancelled });
   return r.bytes;
 }
+// imagens do editor para o otimizador: os frames que ficaram, com os borrões, e as durações (somando as dos apagados, se pedido)
+function editorSource() {
+  const kept = frames.slice(), merge = $('merge').checked, N0 = g.frames.length;
+  const delays = kept.map((f, j) => {
+    let d = g.frames[f.i].delay;
+    if (merge) { const end = j + 1 < kept.length ? kept[j + 1].i : N0; for (let k = f.i + 1; k < end; k++) d += g.frames[k].delay; }
+    return Math.min(65535, d);
+  });
+  const loop = g.appExts.find(e => e.length > 13 && String.fromCharCode(...e.subarray(3, 14)) === 'NETSCAPE2.0') || null;
+  return { W: g.W, H: g.H, N: kept.length, delay: j => delays[j], loop,
+    at: j => { const f = kept[j], s = comp.at(f.i); return f.blurs.length ? GifCore.applyBlurs(s, g.W, g.H, f.blurs) : s; } };
+}
+// nada mudou em relação ao arquivo aberto (nenhum borrão, nenhum frame apagado)
+const untouched = () => frames.length === g.frames.length && frames.every((f, j) => f.i === j && !f.blurs.length);
+// GIF sem perda a partir do editor. Se o otimizador não conseguir deixar idêntico (GIF com transparência que volta a
+// aparecer, por exemplo), usa o montador antigo, que copia os frames originais. Nunca fica maior que o arquivo aberto sem edição.
+async function buildLossless() {
+  let out = await GifOpt.fromFrames(editorSource(), { tick: optTick('Montando o GIF sem perder qualidade…'), cancelled: () => cancelled });
+  if (!out) {
+    const r = await GifCore.buildGIF(g, frames, {
+      mergeDelay: $('merge').checked, getSnap: i => comp.at(i),
+      tick: async (j, t) => { progress(j / t, `Montando: frame ${j} de ${t}`); await sleep(0); }
+    });
+    if (cancelled) throw new Error('CANCELADO');
+    out = await optimizeLossless(r.bytes);
+  }
+  if (untouched() && srcBytes.length <= out.length) out = srcBytes;
+  return out;
+}
 // procura a compressão mais leve que faz o GIF caber em LIMIT (busca binária nos níveis). Devolve { bytes, level, fits }
 async function compressToFit(bytes) {
-  let lo = 0, hi = TOLS.length - 1, best = null, smallest = null, tries = 0;
+  let lo = 0, hi = LEVELS.length - 1, best = null, smallest = null, tries = 0;
   const tryLevel = async k => {
     tries++;
-    const out = await GifOpt.lossy(bytes, TOLS[k], {
+    const out = await GifOpt.lossy(bytes, LEVELS[k], {
       cancelled: () => cancelled,
-      tick: async (ph, i, n) => { $('busyt').textContent = `Comprimindo (tentativa ${tries})…`; progress((ph - 1 + i / n) / 2, `Nível ${k + 1} de ${TOLS.length} · frame ${i} de ${n}`); await sleep(0); }
+      tick: async (ph, i, n) => { $('busyt').textContent = `Comprimindo (tentativa ${tries})…`; progress((ph - 1 + i / n) / 2, `Nível ${k + 1} de ${LEVELS.length} · frame ${i} de ${n}`); await sleep(0); }
     });
     if (!smallest || out.length < smallest.bytes.length) smallest = { bytes: out, level: k + 1 };
     return out;
   };
-  let k = 3;   // começa no meio
+  let k = 2;   // começa no meio
   while (lo <= hi) {
     const out = await tryLevel(k);
     if (out.length <= LIMIT) { best = { bytes: out, level: k + 1 }; hi = k - 1; } else lo = k + 1;
@@ -169,15 +202,8 @@ async function doExport() {
   const name = srcName + (fromVideo ? '' : '-editado') + '.gif';
   let bytes = null, erro = null;
   const ok = await work('Salvando o seu GIF…', async () => {
-    try {
-      const q = $('qual').value.split(',');
-      const r = await GifCore.buildGIF(g, frames, {
-        mergeDelay: $('merge').checked, blurColors: +q[0], blurTol: +q[1], getSnap: i => comp.at(i),
-        tick: async (j, t) => { progress(j / t, `Montando: frame ${j} de ${t}`); await sleep(0); }
-      });
-      if (cancelled) return false;
-      bytes = await optimizeLossless(r.bytes);
-    } catch (err) { if (err.message !== 'CANCELADO') erro = err; return false; }
+    try { bytes = await buildLossless(); }
+    catch (err) { if (err.message !== 'CANCELADO') erro = err; return false; }
   }, null, { cancel: true });
   if (erro) { say('Não consegui salvar o GIF. (' + erro.message + ')', 'err'); draw(); return; }
   if (!ok) { say('Salvamento cancelado. Nada foi salvo.'); draw(); return; }
@@ -185,7 +211,7 @@ async function doExport() {
   if (bytes.length > LIMIT) {
     const a = await askBig(`O GIF ficou com ${mb(bytes.length)}`, [
       `Isso passa do limite de ${LIMIT_TXT}. Ele já foi diminuído ao máximo sem perder qualidade.`,
-      `Posso comprimir só o necessário para caber em ${LIMIT_TXT}. Isso perde um pouco de qualidade: cores parecidas se juntam e mudanças muito pequenas entre frames são ignoradas.`,
+      `Posso comprimir só o necessário para caber em ${LIMIT_TXT}, sempre do jeito mais leve que resolver: primeiro ignorando mudanças muito pequenas entre frames e, se ainda não couber, com menos frames por segundo (o movimento fica um pouco menos suave).`,
       'Outra saída sem perda é apagar frames que não fazem falta.'], true, `Salvar assim mesmo (${mb(bytes.length)})`);
     if (a === 'no') { say('Nada foi salvo. O GIF continua aberto no editor.'); draw(); return; }
     if (a === 'comp') {
@@ -202,7 +228,7 @@ async function doExport() {
           false, `Salvar o comprimido (${mb(res.bytes.length)})`);
         if (a2 !== 'keep') { say('Nada foi salvo. O GIF continua aberto no editor.'); draw(); return; }
       }
-      note = ` Comprimido no nível ${res.level} de ${TOLS.length}.`;
+      note = ` Comprimido no nível ${res.level} de ${LEVELS.length}.`;
       bytes = res.bytes;
     }
   }

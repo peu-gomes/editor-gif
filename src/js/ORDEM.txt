@@ -1,10 +1,12 @@
 gifcore
+gifopt
 videogif
 ui-core
 ui-view
 ui-timeline
 ui-files
 recorder
+capture
 file-input
 ui-canvas
 actions

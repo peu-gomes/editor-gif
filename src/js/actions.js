@@ -114,20 +114,100 @@ function saveGif(bytes, name) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+// ---------- tamanho do arquivo ----------
+// Ao salvar: o GIF é sempre otimizado SEM PERDA (conferido pixel a pixel). Se passar de LIMIT, a pessoa escolhe se comprime.
+const LIMIT = 2.9 * 1048576, LIMIT_TXT = '2,9 MB';
+const TOLS = [6, 12, 18, 24, 36, 48, 64];   // níveis de compressão com perda, do mais leve ao mais forte
+// mostra o andamento do otimizador (fases 1 e 2 = gravar, 3 = conferir)
+const optTick = (label) => async (ph, i, n) => {
+  $('busyt').textContent = ph === 3 ? 'Conferindo se ficou idêntico…' : label;
+  progress((ph - 1 + i / n) / 3, `Frame ${i} de ${n}`);
+  await sleep(0);
+};
+async function optimizeLossless(bytes) {
+  const r = await GifOpt.lossless(bytes, { tick: optTick('Diminuindo o arquivo sem perder qualidade…'), cancelled: () => cancelled });
+  return r.bytes;
+}
+// procura a compressão mais leve que faz o GIF caber em LIMIT (busca binária nos níveis). Devolve { bytes, level, fits }
+async function compressToFit(bytes) {
+  let lo = 0, hi = TOLS.length - 1, best = null, smallest = null, tries = 0;
+  const tryLevel = async k => {
+    tries++;
+    const out = await GifOpt.lossy(bytes, TOLS[k], {
+      cancelled: () => cancelled,
+      tick: async (ph, i, n) => { $('busyt').textContent = `Comprimindo (tentativa ${tries})…`; progress((ph - 1 + i / n) / 2, `Nível ${k + 1} de ${TOLS.length} · frame ${i} de ${n}`); await sleep(0); }
+    });
+    if (!smallest || out.length < smallest.bytes.length) smallest = { bytes: out, level: k + 1 };
+    return out;
+  };
+  let k = 3;   // começa no meio
+  while (lo <= hi) {
+    const out = await tryLevel(k);
+    if (out.length <= LIMIT) { best = { bytes: out, level: k + 1 }; hi = k - 1; } else lo = k + 1;
+    k = Math.floor((lo + hi) / 2);
+  }
+  return best ? { ...best, fits: true } : { ...smallest, fits: false };
+}
+// pergunta o que fazer com um GIF maior que o limite: 'comp', 'keep' ou 'no'
+function askBig(title, lines, canCompress, keepLabel) {
+  $('bigT').textContent = title;
+  const b = $('bigB'); b.textContent = '';
+  for (const l of lines) { const p = document.createElement('p'); p.textContent = l; b.appendChild(p); }
+  $('bigComp').hidden = !canCompress; $('bigKeep').textContent = keepLabel;
+  const d = $('big'); d.returnValue = '';
+  return new Promise(res => {
+    const done = v => { d.onclose = null; if (d.open) d.close(); res(v); };
+    $('bigComp').onclick = () => done('comp'); $('bigKeep').onclick = () => done('keep'); $('bigNo').onclick = () => done('no');
+    d.onclose = () => res('no');   // Esc
+    d.showModal();
+  });
+}
+const mb = n => (n / 1048576).toFixed(1).replace('.', ',') + ' MB';
 async function doExport() {
   if (!g || loading) return;
   if (playing) togglePlay();
-  await work('Salvando o seu GIF…', async () => {
+  const name = srcName + (fromVideo ? '' : '-editado') + '.gif';
+  let bytes = null, erro = null;
+  const ok = await work('Salvando o seu GIF…', async () => {
     try {
-      const q = $('qual').value.split(','), name = srcName + (fromVideo ? '' : '-editado') + '.gif';
+      const q = $('qual').value.split(',');
       const r = await GifCore.buildGIF(g, frames, {
         mergeDelay: $('merge').checked, blurColors: +q[0], blurTol: +q[1], getSnap: i => comp.at(i),
-        tick: async (j, t) => { progress(j / t, `Frame ${j} de ${t}`); await sleep(0); }
+        tick: async (j, t) => { progress(j / t, `Montando: frame ${j} de ${t}`); await sleep(0); }
       });
-      saveGif(r.bytes, name); dirty = false; savedSize = r.bytes.length;
-      say(`Pronto! Salvei “${name}” (${kb(srcBytes.length)} → ${kb(r.bytes.length)}). Procure na pasta de downloads.`, 'ok');
-    } catch (err) { say('Não consegui salvar o GIF. (' + err.message + ')', 'err'); return false; }
-  }, 'GIF salvo!');
+      if (cancelled) return false;
+      bytes = await optimizeLossless(r.bytes);
+    } catch (err) { if (err.message !== 'CANCELADO') erro = err; return false; }
+  }, null, { cancel: true });
+  if (erro) { say('Não consegui salvar o GIF. (' + erro.message + ')', 'err'); draw(); return; }
+  if (!ok) { say('Salvamento cancelado. Nada foi salvo.'); draw(); return; }
+  let note = '';
+  if (bytes.length > LIMIT) {
+    const a = await askBig(`O GIF ficou com ${mb(bytes.length)}`, [
+      `Isso passa do limite de ${LIMIT_TXT}. Ele já foi diminuído ao máximo sem perder qualidade.`,
+      `Posso comprimir só o necessário para caber em ${LIMIT_TXT}. Isso perde um pouco de qualidade: cores parecidas se juntam e mudanças muito pequenas entre frames são ignoradas.`,
+      'Outra saída sem perda é apagar frames que não fazem falta.'], true, `Salvar assim mesmo (${mb(bytes.length)})`);
+    if (a === 'no') { say('Nada foi salvo. O GIF continua aberto no editor.'); draw(); return; }
+    if (a === 'comp') {
+      let res = null, e2 = null;
+      const ok2 = await work('Comprimindo…', async () => {
+        try { res = await compressToFit(bytes); } catch (err) { if (err.message !== 'CANCELADO') e2 = err; return false; }
+      }, null, { cancel: true });
+      if (e2) { say('Não consegui comprimir o GIF. (' + e2.message + ')', 'err'); draw(); return; }
+      if (!ok2) { say('Compressão cancelada. Nada foi salvo.'); draw(); return; }
+      if (!res.fits) {
+        const a2 = await askBig(`Mesmo comprimindo, ficou com ${mb(res.bytes.length)}`, [
+          `Não deu para caber em ${LIMIT_TXT} sem estragar a imagem.`,
+          'Para diminuir mais: apague frames que não fazem falta, ou converta de novo com largura menor ou menos frames por segundo (Opções para vídeos, na tela inicial).'],
+          false, `Salvar o comprimido (${mb(res.bytes.length)})`);
+        if (a2 !== 'keep') { say('Nada foi salvo. O GIF continua aberto no editor.'); draw(); return; }
+      }
+      note = ` Comprimido no nível ${res.level} de ${TOLS.length}.`;
+      bytes = res.bytes;
+    }
+  }
+  saveGif(bytes, name); dirty = false; savedSize = bytes.length; refresh();
+  say(`Pronto! Salvei “${name}” (${kb(srcBytes.length)} → ${kb(bytes.length)}).${note} Procure na pasta de downloads.`, 'ok');
   draw();
 }
 function nudge(dx, dy) { if (!rect) return; rect = { ...rect, x: clamp(rect.x + dx, 0, g.W - rect.w), y: clamp(rect.y + dy, 0, g.H - rect.h) }; live = null; redraw(); }

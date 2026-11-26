@@ -35,7 +35,7 @@ window.addEventListener('resize', redraw);
 
 window.addEventListener('keydown', e => {
   const t = e.target, k = e.key, K = k.length === 1 ? k.toLowerCase() : k, ctrl = e.ctrlKey || e.metaKey;
-  if (help.open || $('result').open || loading) return;
+  if (help.open || $('result').open || $('big').open || loading) return;
   if (!ctrl && (t.tagName === 'SELECT' || t.tagName === 'INPUT')) return;   // não atrapalhar menus e controles
   if (K === '?' || k === 'F1') { e.preventDefault(); openHelp(); return; }
   if (ctrl && K === 'o') { e.preventDefault(); $('file').click(); return; }

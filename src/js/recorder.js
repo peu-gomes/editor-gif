@@ -1,10 +1,13 @@
 // ---------- gravar a tela ----------
-// Usa o próprio navegador (getDisplayMedia + MediaRecorder): nada para instalar e nada sai do computador.
-// Grava em WebM (Chrome/Chromium e Firefox, inclusive no Linux) e entrega ao mesmo caminho do vídeo:
-// vira GIF (com as "Opções para vídeos") e abre no editor. Se algo falhar, a gravação é baixada como vídeo.
+// Usa o próprio navegador (getDisplayMedia): nada para instalar e nada sai do computador.
+// Captura direta (Chrome/Chromium/Edge): lê os pixels exatos da tela, frame a frame, e guarda só o pedaço que mudou
+// (comprimido sem perda na memória). No fim vira GIF sem passar por vídeo: o vídeo perde qualidade e deixa "ruído"
+// que o GIF conta como mudança, o que deixava o arquivo ~2,7× maior. Sem captura direta (Firefox), grava em vídeo
+// (MediaRecorder) e converte, como antes; se algo falhar nesse caminho, a gravação é baixada como vídeo.
 let rec = null, recMaxS = 300, recCount = 3;
 const baseTitle = document.title;
-const recSupported = () => !!(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && window.MediaRecorder);
+const directOk = () => typeof window.MediaStreamTrackProcessor === 'function' && typeof window.CompressionStream === 'function' && typeof window.OffscreenCanvas === 'function';
+const recSupported = () => !!(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && (directOk() || window.MediaRecorder));
 // Qual formato gravar. H.264 primeiro: é o que gravadores externos usam, dá GIF bem menor (o VP9 em tempo real deixa "ruído" nos frames
 // parados, que o conversor conta como mudança) e converte mais rápido. Sem H.264 (Chromium/Firefox no Linux), cai para VP9/VP8 com bitrate alto.
 // "play" é um tipo equivalente só para saber se o navegador consegue TOCAR o que gravou (canPlayType de webm+h264 responde vazio mesmo tocando).
@@ -34,7 +37,7 @@ function recErr(err) {
 }
 async function startRecording() {
   if (rec || loading || recWait) return;
-  if (!recSupported() || !recPick()) {
+  if (!recSupported() || (!directOk() && !recPick())) {
     showResult('Este navegador não consegue gravar a tela', [
       'Use o Google Chrome ou o Chromium (ou o Firefox) em uma versão recente, abrindo o arquivo do editor direto do computador.',
       'No Linux com Wayland, o sistema mostra uma janela própria para escolher a tela: ela precisa do serviço xdg-desktop-portal com PipeWire.'], 'err');
@@ -53,7 +56,11 @@ async function startRecording() {
     recUI(`A gravação começa em ${n}… vá para a janela que quer gravar`, false);
     await sleep(1000); if (r.stopped) return;
   }
-  try {
+  if (directOk()) {
+    try { r.cap = startCapture(r, stream.getVideoTracks()[0]); }
+    catch (err) { r.cap = null; }   // não deu: cai para a gravação em vídeo
+  }
+  if (!r.cap) try {
     const pick = recPick(); r.type = pick.rec;
     r.mr = new MediaRecorder(stream, { mimeType: pick.rec, videoBitsPerSecond: pick.bps });
     r.mr.ondataavailable = e => { if (e.data && e.data.size) r.chunks.push(e.data); };
@@ -72,7 +79,8 @@ async function startRecording() {
 function stopRecording(discard, auto) {
   const r = rec; if (!r || r.stopped) return;
   r.stopped = true; r.discard = !!discard; r.auto = !!auto; clearInterval(r.timer);
-  if (r.mr && r.mr.state !== 'inactive') r.mr.stop();   // o resto acontece em finishRecording (onstop)
+  if (r.cap) { r.cap.endT = performance.now(); r.stream.getTracks().forEach(t => t.stop()); finishRecording(r); }
+  else if (r.mr && r.mr.state !== 'inactive') r.mr.stop();   // o resto acontece em finishRecording (onstop)
   else finishRecording(r);
 }
 async function finishRecording(r) {
@@ -81,6 +89,7 @@ async function finishRecording(r) {
   const secs = r.t0 ? (performance.now() - r.t0) / 1000 : 0;
   if (r.discard) { say('Gravação descartada. Nenhum arquivo foi criado.'); return; }
   if (!r.t0) { say('Gravação cancelada antes de começar. Nenhum arquivo foi criado.'); return; }   // parou durante a contagem
+  if (r.cap) { await finishCapture(r, secs); return; }
   if (!r.chunks.length || secs < 0.5) { showResult('A gravação ficou muito curta', ['Não deu para aproveitar. Grave por pelo menos 1 segundo.', 'Nenhum arquivo foi criado.'], 'warn'); return; }
   const d = new Date(), p2 = n => String(n).padStart(2, '0');
   const mime = /mp4/.test(r.type) ? 'video/mp4' : 'video/webm';

@@ -30,7 +30,7 @@
     <p class="or">ou arraste o arquivo (GIF ou vídeo) e solte aqui</p>
     <div class="recbox">
       <button id="recStart" class="btn big recbtn"><span class="reddot" aria-hidden="true">●</span> Gravar a tela</button>
-      <p class="dim small">Grava a tela, uma janela ou uma aba e já abre no editor, para borrar e cortar. Sem som, até 5 minutos.</p>
+      <p class="dim small">Grava a tela, uma janela ou uma aba e já abre no editor, para borrar e cortar. Sem som, até 5 minutos. No Chrome, grava os pixels exatos da tela (sem passar por vídeo), com qualidade máxima e arquivo menor.</p>
     </div>
     <details class="convopts">
       <summary>Opções para vídeos</summary>
@@ -41,15 +41,14 @@
       <label class="opt">Frames por segundo
         <select id="cvFps"><option value="15" selected>15 (padrão)</option><option value="12">12</option><option value="10">10 (arquivo menor)</option><option value="8">8 (arquivo bem menor)</option></select>
       </label>
-      <label class="opt">Qualidade e tamanho do arquivo
-        <select id="cvQ"><option value="4">Máxima qualidade (arquivo maior)</option><option value="12" selected>Equilibrado (padrão)</option><option value="24">Menor tamanho</option></select>
-      </label>
+      <p class="dim small">O vídeo vira GIF em qualidade máxima. O arquivo é diminuído só no fim, ao salvar: primeiro sem perder nada e, se passar de 2,9 MB, você escolhe se quer comprimir.</p>
       <p class="dim small">Para escolher vários vídeos de uma vez, selecione todos na janela de escolha: cada um é convertido e baixado como um GIF.</p>
     </details>
     <ul class="can">
       <li><b>Borrar dados pessoais</b> (CNPJ, CPF, nomes, e-mails…) para não aparecerem em artigos</li>
       <li><b>Apagar frames</b> do GIF que você não quer</li>
       <li><b>Converter vídeo em GIF</b> (até 1280 px, 15 fps, 256 cores) com o menor tamanho possível</li>
+      <li><b>Arquivo pequeno sem perder qualidade:</b> ao salvar, o GIF é diminuído sem mudar nenhum pixel; se passar de 2,9 MB, você escolhe se quer comprimir</li>
       <li><b>Gravar a tela</b> e editar o resultado na hora</li>
       <li><b>Salvar</b> o resultado, sem mexer no arquivo original</li>
     </ul>
@@ -177,15 +176,21 @@
   <p class="foot"><button id="resOk" class="btn pri">Entendi</button></p>
 </dialog>
 
+<dialog id="big">
+  <h3 id="bigT"></h3>
+  <div id="bigB"></div>
+  <p class="foot"><button id="bigNo" class="btn">Não salvar</button> <button id="bigKeep" class="btn">Salvar assim mesmo</button> <button id="bigComp" class="btn ok">Comprimir para caber</button></p>
+</dialog>
+
 <dialog id="help">
   <h3>Como usar</h3>
   <ol class="how">
     <li><b>Escolha o GIF</b> no botão azul ou arrastando o arquivo para a janela. Se for um <b>vídeo</b> (MP4, WebM), ele é convertido em GIF na hora: até 1280 px de largura, 15 frames por segundo e 256 cores. Vídeo menor que isso é mantido como está. Dá para escolher vários vídeos de uma vez.</li>
     <li><b>Edite.</b> Em <i>Borrar dados pessoais</i>, desenhe um retângulo sobre o CNPJ, CPF, nome ou outro dado e clique em <i>Borrar</i>. Em <i>Apagar frames</i>, marque frames na linha do tempo e clique em <i>Apagar</i>.</li>
-    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado.</li>
+    <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado. Ao salvar, o arquivo é diminuído sem perder qualidade (cada pixel é conferido). Se ainda passar de 2,9 MB, o editor pergunta se você quer comprimir só o necessário para caber.</li>
   </ol>
   <p>Errou? Clique em <b>Desfazer</b>. Dá para voltar vários passos.</p>
-  <p><b>Gravar a tela:</b> clique em <i>Gravar a tela</i> e escolha a tela, a janela ou a aba. A gravação começa depois de uma contagem de 3 segundos. Para terminar, volte a esta aba e clique em <i>Parar e abrir no editor</i>, ou use o botão “Parar compartilhamento” que o navegador mostra. A gravação vira GIF e abre no editor, para você borrar e cortar. Sem som, no máximo 5 minutos. Se você parar pelo botão do navegador estando em outra aba, volte para a aba do editor: a conversão em GIF começa assim que você voltar.</p>
+  <p><b>Gravar a tela:</b> clique em <i>Gravar a tela</i> e escolha a tela, a janela ou a aba. A gravação começa depois de uma contagem de 3 segundos. Para terminar, volte a esta aba e clique em <i>Parar e abrir no editor</i>, ou use o botão “Parar compartilhamento” que o navegador mostra. A gravação vira GIF e abre no editor, para você borrar e cortar. Sem som, no máximo 5 minutos. A largura e os frames por segundo seguem as <i>Opções para vídeos</i>. Se você parar pelo botão do navegador estando em outra aba, volte para a aba do editor: a conversão em GIF começa assim que você voltar.</p>
   <h4>Marcar frames (com o mouse)</h4>
   <table>
     <tr><td>Clique no frame</td><td>marca só ele</td></tr>

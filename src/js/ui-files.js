@@ -59,7 +59,8 @@ async function loadGif(file) {
 // opções da conversão (largura e fps vêm da tela inicial); prefix aparece antes do "frame x de y" (lote)
 function convOpts(prefix) {
   return {
-    maxW: +$('cvW').value, fps: +$('cvFps').value, tol: +$('cvQ').value, cancelled: () => cancelled,
+    maxW: +$('cvW').value, fps: +$('cvFps').value, tol: 0,   // qualidade máxima: o arquivo só é diminuído ao salvar
+    cancelled: () => cancelled,
     confirmFrames: (n, s) => confirm('Este vídeo é longo (' + Math.round(s / 60 * 10) / 10 + ' min, ' + n + ' frames).\nA conversão pode demorar bastante e o GIF pode ficar grande.\n\nQuer continuar?'),
     onProgress: p => {
       $('busyt').textContent = (prefix || '') + (p.phase === 'cores' ? 'Analisando as cores do vídeo…' : 'Convertendo o vídeo em GIF…');
@@ -101,7 +102,9 @@ async function convertBatch(vids) {
       if (cancelled) break;
       try {
         const r = await VideoGif.convert(vids[i], convOpts(`Vídeo ${i + 1} de ${vids.length}: `)), nm = baseName(vids[i].name) + '.gif';
-        saveGif(r.bytes, nm); ok++; linhas.push(`✓ ${vids[i].name} → ${nm} (${kb(r.bytes.length)})`);
+        let out = await optimizeLossless(r.bytes), extra = '';   // em lote não dá para perguntar: comprime sozinho se passar do limite
+        if (out.length > LIMIT) { const c = await compressToFit(out); out = c.bytes; extra = c.fits ? `, comprimido no nível ${c.level} para caber em ${LIMIT_TXT}` : `, comprimido ao máximo e ainda acima de ${LIMIT_TXT}`; }
+        saveGif(out, nm); ok++; linhas.push(`✓ ${vids[i].name} → ${nm} (${kb(out.length)}${extra})`);
         await sleep(300);
       } catch (err) { if (err.message === 'CANCELADO') break; linhas.push(`✗ ${vids[i].name}: ${errMsg(err)}`); }
     }

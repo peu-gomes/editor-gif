@@ -4,7 +4,7 @@ const click = (id, fn) => $(id).onclick = fn;
 click('play', togglePlay); click('prev', () => step(-1)); click('next', () => step(1));
 click('del', doDel); click('keep', doKeep); click('before', doBefore); click('after', doAfter);
 click('undo', undo); click('redo', redo); click('blur', doBlur); click('unblur', doUnblur); click('exp', doExport);
-click('all', markAll); click('none', markNone); click('inv', invert); click('full', fullArea);
+click('clr', () => { clearAreas(); redraw(); }); click('all', markAll); click('none', markNone); click('inv', invert); click('full', fullArea);
 click('selB', markBefore); click('selA', markAfter); click('rsel', markRange);
 click('recStart', startRecording); click('recAgain', startRecording);
 click('recStop', () => stopRecording(false)); click('recCancel', () => stopRecording(true));
@@ -46,12 +46,19 @@ window.addEventListener('keydown', e => {
   else if (ctrl && (K === 'y' || (K === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
   else if (ctrl && K === 'a') { e.preventDefault(); markAll(); }
   else if (ctrl && K === 'i') { e.preventDefault(); invert(); }
+  else if (ctrl && (K === '=' || K === '+')) { e.preventDefault(); zoomStep(1); }
+  else if (ctrl && (K === '-' || K === '_')) { e.preventDefault(); zoomStep(-1); }
+  else if (ctrl && K === '0') { e.preventDefault(); zoomToFit(); }
   else if (ctrl) return;
   else if (e.altKey && k.startsWith('Arrow')) {
     e.preventDefault(); const s = e.shiftKey ? 10 : 1;
     nudge(k === 'ArrowLeft' ? -s : k === 'ArrowRight' ? s : 0, k === 'ArrowUp' ? -s : k === 'ArrowDown' ? s : 0);
   }
-  else if (k === 'Delete') { e.preventDefault(); sel.size ? doDel() : removeFrames(new Set([cur])); }
+  else if (k === 'Delete' || k === 'Backspace') {   // na aba Borrar, com área marcada: apaga a área; senão, apaga frames
+    e.preventDefault();
+    if (tab === 'blur' && rect) { dropArea(rect); redraw(); }
+    else if (k === 'Delete') sel.size ? doDel() : removeFrames(new Set([cur]));
+  }
   else if (k === 'Enter') { if (t.tagName === 'BUTTON') return; e.preventDefault(); if (tab === 'blur') doBlur(); }   // na aba "Apagar frames" a área do borrão está escondida: não borra às cegas
   else if (K === 'b') { if (tab === 'blur') doBlur(); }
   else if (K === 'u') { if (tab === 'blur') doUnblur(); }
@@ -60,7 +67,7 @@ window.addEventListener('keydown', e => {
   else if (k === ']') doAfter();
   else if (k === '+' || k === '=') setRadius(+$('rad').value + 1);
   else if (k === '-' || k === '_') setRadius(+$('rad').value - 1);
-  else if (k === 'Escape') { rect = null; sel = new Set(); refresh(); }
+  else if (k === 'Escape') { clearAreas(); sel = new Set(); refresh(); }
   else if (k === 'ArrowRight') { e.preventDefault(); go(1, e.shiftKey); }
   else if (k === 'ArrowLeft') { e.preventDefault(); go(-1, e.shiftKey); }
   else if (k === 'Home') { e.preventDefault(); go(-1e9, e.shiftKey); }

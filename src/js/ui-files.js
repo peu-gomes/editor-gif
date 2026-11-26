@@ -37,10 +37,10 @@ async function openBytes(bytes, name, isConv) {
   playing && togglePlay(); savedSize = 0;
   srcBytes = bytes; g = ng; comp = c; srcName = baseName(name); fromVideo = !!isConv;
   cv.width = W; cv.height = H;
-  frames = list; undoSt = []; redoSt = []; sel = new Set(); cur = frames[0]; anchor = cur; rect = null; live = null; dirty = !!isConv;
+  frames = list; undoSt = []; redoSt = []; sel = new Set(); cur = frames[0]; anchor = cur; areas = []; rect = null; live = null; zoomFit = true; dirty = !!isConv;
   lastSel = new Set(); autoScope(); $('rfrom').value = $('rto').value = '';
   setTab('blur');
-  refresh(true);
+  refresh(true); applyZoom(); $('stage').scrollTo(0, 0);
   return true;
 }
 async function loadGif(file) {

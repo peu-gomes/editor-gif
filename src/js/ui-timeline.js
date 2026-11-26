@@ -30,7 +30,7 @@ function refresh(scroll) {
     const total = frames.reduce((a, f) => a + dur(f), 0), nb = frames.filter(f => f.blurs.length).length;
     $('tinfo').innerHTML = '';
     const b = document.createElement('b'); b.textContent = `${pl(frames.length, 'frame', 'frames')} · ${fmt(total)}`;
-    const s = document.createElement('span'); s.className = 'dim'; s.textContent = nb ? ` · ${pl(nb, 'com borrão', 'com borrão')} (marca laranja)` : ' — cada frame é uma imagem do GIF';
+    const s = document.createElement('span'); s.className = 'dim'; s.textContent = '';   // frames com borrão: faixa laranja na miniatura
     $('tinfo').append(b, s);
     $('fi').textContent = `Frame ${frames.indexOf(cur) + 1} de ${frames.length} · ${dur(cur)} ms`;
   }

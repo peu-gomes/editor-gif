@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-R7ll3RcR8T5zE3yLcUFyK8gXQp3s8u92Y3ih6YZdE6U='; style-src 'sha256-r9xxccH4BpbmgNPwKjOsl3ApBTO9MDvdto59+wYMTUo='; img-src blob: data:; media-src blob:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-99lURYWL6Z0LfSXZflDrf6wnjtt7ixdlg8hO+Kt2egY='; style-src 'sha256-9QehB21xb1bPmconHMygL6Y3PWZ7x+7xKc2tjo+TuRg='; img-src blob: data:; media-src blob:; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>Central de Ajuda · Editor de GIF v1.5.0</title>
+<title>Central de Ajuda · Editor de GIF v1.6.0</title>
 <style>:root {
   color-scheme: light;
   --bg: #f3f5f9; --panel: #ffffff; --line: #d3d9e4; --fg: #1c2433; --dim: #5a6577;
@@ -52,7 +52,12 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 .brand h1 { font-size: 22px; }
 .priv { color: var(--ok-d); font-size: 14px; }
 .sub { color: var(--dim); font-size: 16px; font-weight: 600; }
-.top-actions { display: flex; gap: 8px; }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+/* editando: Desfazer/Refazer/Salvar ficam no topo (sem rodapé, sobra altura para o GIF) */
+.edacts { display: flex; gap: 8px; align-items: center; padding-left: 10px; margin-left: 2px; border-left: 1px solid var(--line); }
+#exp { font-weight: 600; padding-left: 20px; padding-right: 20px; }
+body.ed .priv { display: none; }
+@media (max-width: 1400px) { body.ed .sub, body.ed .ver { display: none; } }
 .ver { color: var(--dim); font-size: 13px; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; background: #f7f9fc; align-self: center; font-variant-numeric: tabular-nums; }
 .verwelcome { margin-top: 14px; }
 .verfoot { float: left; margin-top: 12px; }
@@ -70,18 +75,39 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 /* edição */
 #editor {
   flex: 1; min-height: var(--edmin, 560px); display: grid; gap: 12px; padding: 12px 20px;
-  grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: minmax(0, 1fr) auto;
   grid-template-areas: "viewer tools" "timeline tools";
 }
-#viewer { grid-area: viewer; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.hint { background: var(--acc-bg); color: #0b3a82; border-radius: 10px; padding: 10px 14px; font-size: 17px; font-weight: 500; }
-#stage { flex: 1; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #e8ecf3; border-radius: 12px; padding: 8px; overflow: hidden; }
-#cv { max-width: 100%; max-height: 100%; touch-action: none; border-radius: 4px; box-shadow: 0 1px 6px rgba(0,0,0,.25);
+#viewer { grid-area: viewer; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* área da imagem: o tamanho do GIF na tela é definido pelo zoom (ui-canvas.js); ampliado, a área rola */
+#stagew { flex: 1; min-height: 200px; position: relative; display: flex; }
+#stage { flex: 1; min-width: 0; display: flex; background: #e8ecf3; border-radius: 12px; padding: 8px; overflow: auto; }
+#stage.zoomed { cursor: grab; }
+#stage.panning, #stage.panning #cv { cursor: grabbing !important; }
+#cv { margin: auto; flex: none; touch-action: none; border-radius: 4px; box-shadow: 0 1px 6px rgba(0,0,0,.25);
   background: repeating-conic-gradient(#cfd4dc 0 25%, #e6e9ef 0 50%) 0 0/16px 16px; }
-#player { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-#fi { font-variant-numeric: tabular-nums; min-width: 12ch; }
-#ginfo { font-variant-numeric: tabular-nums; }
-.spd { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+#cv.px { image-rendering: pixelated; }
+/* dica por cima da imagem, embaixo e no meio; não atrapalha o mouse */
+.hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: calc(100% - 28px); pointer-events: none;
+  background: rgba(28,36,51,.86); color: #fff; border-radius: 999px; padding: 7px 16px; font-size: 15px; font-weight: 500; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+#player { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+#player .btn { min-height: 38px; padding: 4px 12px; }
+#prev, #next { width: 42px; padding: 0 !important; }
+#fi { font-variant-numeric: tabular-nums; min-width: 12ch; margin: 0 4px; }
+.zoom { display: inline-flex; gap: 4px; align-items: center; margin-left: auto; }
+.btn.sq { width: 38px; padding: 0 !important; font-size: 20px; font-weight: 600; }
+#zlv { min-width: 4.2ch; text-align: center; font-variant-numeric: tabular-nums; font-size: 14px; }
+/* uma linha só (a imagem não muda de tamanho quando chega uma mensagem); texto longo termina em … e aparece inteiro ao passar o mouse */
+#status { display: flex; gap: 16px; align-items: baseline; font-size: 14px; min-height: 1.45em; white-space: nowrap; }
+#msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#ginfo { flex: none; font-variant-numeric: tabular-nums; }
+#msg { transition: opacity .6s; }
+#msg.ok { color: var(--ok-d); font-weight: 600; }
+#msg.err { color: var(--red); font-weight: 600; }
+.dirty { width: 10px; height: 10px; border-radius: 50%; background: #ffc247; box-shadow: 0 0 0 2px rgba(255,255,255,.7); flex: none; }   /* bolinha amarela no Salvar = há alterações não salvas */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.spd { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.spd select { min-height: 38px; padding: 4px 8px; }
 
 #tools { grid-area: tools; min-height: 0; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .q { font-weight: 700; font-size: 17px; margin-bottom: 8px; }
@@ -124,8 +150,11 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 
 /* linha do tempo */
 #timeline { grid-area: timeline; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 4px; min-width: 0; }
-#tlh { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding-bottom: 6px; }
-#tlh label { display: flex; gap: 8px; align-items: center; }
+#tlh { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; padding-bottom: 6px; }
+#tinfo { font-size: 15px; }
+#tlh .tsz { display: flex; gap: 4px; align-items: center; margin-left: auto; font-size: 14px; }
+.tsz input { width: 90px; }
+.tsz .big2 { font-size: 20px; line-height: 1; }
 #tl { overflow-x: auto; overflow-y: hidden; padding: 2px 0 8px; }
 #strip { display: flex; gap: 4px; width: max-content; min-width: 100%; }
 .cell { position: relative; flex: none; padding: 4px 4px 0; border-radius: 8px; border: 3px solid transparent; background: #eef1f6; cursor: pointer; user-select: none; -webkit-user-select: none; }
@@ -133,26 +162,18 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 .cell i { display: block; font-style: normal; font-size: 12px; text-align: center; color: var(--dim); padding: 3px 0; font-variant-numeric: tabular-nums; }
 .cell b { position: absolute; left: 6px; right: 6px; bottom: 22px; height: 5px; background: #f59314; border-radius: 3px; display: none; }
 .cell.bl b { display: block; }
-/* caixinha de marcar: sempre visível; clicar nela marca/desmarca só aquele frame */
-.cell .ck { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,.92); color: transparent; border: 2px solid #7d8799; font-size: 14px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 1px rgba(255,255,255,.8); }
+/* caixinha de marcar: sempre visível; clicar nela marca/desmarca só aquele frame (menor quando as miniaturas são pequenas) */
+.cell .ck { position: absolute; top: 5px; left: 5px; width: clamp(17px, calc(var(--th) * .3), 24px); height: clamp(17px, calc(var(--th) * .3), 24px); border-radius: 50%; background: rgba(255,255,255,.92); color: transparent; border: 2px solid #7d8799; font-size: 14px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 1px rgba(255,255,255,.8); }
 .cell .ck:hover { border-color: var(--acc); background: #fff; }
 .cell.sel { background: var(--acc-bg); border-color: var(--acc); }
 .cell.sel .ck { background: var(--acc); border-color: #fff; color: #fff; box-shadow: 0 0 0 2px var(--acc); }
-#seltools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 0 8px; }
-#seltools .rng { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; color: var(--dim); }
-#seltools input[type=number] { font: inherit; width: 68px; min-height: 34px; padding: 4px 8px; border: 1px solid #aeb7c6; border-radius: 8px; background: #fff; color: var(--fg); }
+#seltools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+#seltools .rng { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; color: var(--dim); font-size: 14px; }
+#seltools input[type=number] { font: inherit; font-size: 14px; width: 52px; min-height: 34px; padding: 4px 8px; border: 1px solid #aeb7c6; border-radius: 8px; background: #fff; color: var(--fg); }
 .btn.sm { min-height: 34px; padding: 4px 11px; font-size: 14px; border-radius: 8px; }
 .cell.cur { border-color: #1c2433; }
 .cell.cur.sel { border-color: var(--acc-d); }
 .cell.cur i { color: var(--fg); font-weight: 700; }
-
-/* rodapé */
-#bottom { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 20px max(10px, env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid var(--line); flex-wrap: wrap; }
-#bottom .left, #bottom .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-#msg { padding-left: 8px; transition: opacity .6s; max-width: 60ch; }
-#msg.ok { color: var(--ok-d); font-weight: 600; }
-#msg.err { color: var(--red); font-weight: 600; }
-.dirty { color: #a35a00; font-weight: 600; }
 
 /* gravar a tela */
 .reddot { color: #d32f2f; }
@@ -211,18 +232,18 @@ dialog td:first-child { white-space: nowrap; }
   .priv, .sub { font-size: 14px; }
   #editor { padding: 8px 16px; gap: 8px; }
   #viewer { gap: 6px; }
-  .hint { padding: 6px 12px; font-size: 15px; border-radius: 8px; }
-  #stage { min-height: 240px; padding: 6px; }
+  #stagew { min-height: 220px; }
+  #stage { padding: 6px; }
+  #player .btn, .spd select { min-height: 34px; }
+  #prev, #next, .btn.sq { width: 36px; }
   #timeline { padding: 6px 10px 2px; }
-  #tlh { padding-bottom: 2px; }
-  #seltools { gap: 4px; padding-bottom: 4px; }
+  #tlh { padding-bottom: 4px; }
   #seltools .rng { margin-left: 4px; }
   .btn.sm { min-height: 30px; padding: 2px 9px; font-size: 13px; }
   #seltools input[type=number] { min-height: 30px; padding: 2px 6px; width: 60px; }
   #tl { padding: 2px 0 4px; }
   .cell i { padding: 1px 0; }
   #tools { padding: 10px; }
-  .q { margin-bottom: 6px; font-size: 16px; }
   #tabs { margin-bottom: 8px; gap: 6px; }
   .tab { min-height: 42px; }
   .step { margin: 8px 0 6px; }
@@ -242,16 +263,13 @@ dialog td:first-child { white-space: nowrap; }
   .radios label:has(input:focus-visible) { outline: 3px solid #7fb0ff; outline-offset: 1px; }
   .radios label:has(input:disabled) input { cursor: default; }
   .actions { bottom: -10px; }
-  #bottom { padding: 6px 16px; }
-  #bottom .btn.big { min-height: 42px; }
 }
 
 /* janela muito baixa (ex.: Full HD com escala 150%, ~600 px de altura): some a faixa de dica (os passos do painel dizem o mesmo) e os frames ficam menores */
 @media (max-height: 650px) {
   :root { --th: 46px; --edmin: 480px; }
-  .hint { display: none; }
-  .q { display: none; }
-  #stage { min-height: 200px; }
+  #stagew { min-height: 180px; }
+  #tools .step { font-size: 14px; line-height: 1.35; }
 }
 
 /* telas menores: tudo empilhado e a página rola */
@@ -259,20 +277,20 @@ dialog td:first-child { white-space: nowrap; }
   body { height: auto; min-height: 100%; }
   html { height: auto; }
   #editor { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "viewer" "tools" "timeline"; padding: 10px 12px; }
-  #stage { min-height: 220px; }
-  #cv { max-height: 60vh; }
+  #stagew { min-height: 220px; }
+  #stage { max-height: calc(60vh + 16px); }
   #tools { overflow: visible; }
-  #top { padding: 10px 12px; }
-  #bottom { position: sticky; bottom: 0; padding-left: 12px; padding-right: 12px; }
+  /* topo fixo: Desfazer/Refazer/Salvar sempre à mão enquanto a página rola */
+  #top { padding: 8px 12px; position: sticky; top: 0; z-index: 5; }
+  body.ed .brand { display: none; }
+  .top-actions { justify-content: flex-start; }
+  .edacts { border-left: 0; padding-left: 0; margin-left: 0; flex: 1 1 100%; }
+  #exp { flex: 1; }
   .card { padding: 26px 20px; }
-  .spd { margin-left: 0; }
+  .zoom { margin-left: 0; }
   .actions { position: static; box-shadow: none; }
-  #bottom { gap: 8px; }
-  #bottom .left, #bottom .right { display: contents; }
-  #undo, #redo { flex: none; padding: 9px 12px; }
-  #exp { flex: 1; order: 1; }
-  #msg { order: 3; flex: 1 0 100%; padding-left: 0; font-size: 14px; max-width: none; }
-  .dirty { order: 2; flex: 1 0 100%; font-size: 14px; }
+  #status { flex-wrap: wrap; white-space: normal; gap: 2px 16px; }
+  #msg { flex-basis: 100%; }
 }
 </style>
 </head>
@@ -280,11 +298,16 @@ dialog td:first-child { white-space: nowrap; }
 <input type="file" id="file" accept="image/gif,.gif,video/*,.mp4,.m4v,.mov,.webm,.mkv" multiple hidden>
 
 <header id="top">
-  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v1.5.0</span><span class="priv">Seu arquivo fica só neste computador</span></div>
+  <div class="brand"><h1>Central de Ajuda</h1><span class="sub">Editor de GIF</span><span class="ver" title="Versão do editor">v1.6.0</span><span class="priv">Seu arquivo fica só neste computador</span></div>
   <div class="top-actions">
     <button id="recAgain" class="btn recbtn" hidden><span class="reddot" aria-hidden="true">●</span> Gravar a tela</button>
     <button id="openAgain" class="btn" hidden>Abrir outro GIF</button>
     <button id="helpb" class="btn">Como usar</button>
+    <div id="edActs" class="edacts" hidden>
+      <button id="undo" class="btn" title="Desfazer (Ctrl+Z)">↶ Desfazer</button>
+      <button id="redo" class="btn" title="Refazer (Ctrl+Y)">↷ Refazer</button>
+      <button id="exp" class="btn ok" title="Salvar GIF (Ctrl+S)">Salvar GIF<span id="dirty" class="dirty" hidden title="Há alterações que ainda não foram salvas"><span class="sr">(alterações não salvas)</span></span></button>
+    </div>
   </div>
 </header>
 
@@ -320,39 +343,48 @@ dialog td:first-child { white-space: nowrap; }
       <li><b>Gravar a tela</b> e editar o resultado na hora</li>
       <li><b>Salvar</b> o resultado, sem mexer no arquivo original</li>
     </ul>
-    <p class="dim small verwelcome">Editor de GIF · versão 1.5.0</p>
+    <p class="dim small verwelcome">Editor de GIF · versão 1.6.0</p>
   </div>
 </main>
 
 <!-- TELA DE EDIÇÃO -->
 <main id="editor" hidden>
   <section id="viewer" aria-label="Visualização">
-    <p id="hint" class="hint"></p>
-    <div id="stage"><canvas id="cv" width="10" height="10"></canvas></div>
+    <div id="stagew">
+      <div id="stage"><canvas id="cv" width="10" height="10"></canvas></div>
+      <p id="hint" class="hint" aria-live="polite"></p>
+    </div>
     <div id="player">
-      <button id="prev" class="btn" title="Frame anterior">◀ Anterior</button>
-      <button id="play" class="btn">▶ Assistir</button>
-      <button id="next" class="btn" title="Próximo frame">Próximo ▶</button>
+      <button id="prev" class="btn" title="Frame anterior (←)" aria-label="Frame anterior">◀</button>
+      <button id="play" class="btn" title="Assistir / parar (Espaço)">▶ Assistir</button>
+      <button id="next" class="btn" title="Próximo frame (→)" aria-label="Próximo frame">▶</button>
       <span id="fi" class="dim"></span>
-      <label class="spd dim">Velocidade
+      <span class="zoom" role="group" aria-label="Zoom da imagem">
+        <button id="zout" class="btn sq" title="Diminuir (Ctrl + roda do mouse para baixo)" aria-label="Diminuir zoom">−</button>
+        <span id="zlv" class="dim" aria-live="polite">100%</span>
+        <button id="zin" class="btn sq" title="Aumentar (Ctrl + roda do mouse para cima)" aria-label="Aumentar zoom">+</button>
+        <button id="zfit" class="btn" title="Mostrar a imagem inteira (Ctrl+0)">Ajustar</button>
+        <button id="z100" class="btn" title="Tamanho real, 1 pixel do GIF = 1 pixel da tela">100%</button>
+      </span>
+      <label class="spd dim" title="Velocidade da prévia (não muda o GIF salvo)">Velocidade
         <select id="spd"><option value="0.5">Devagar</option><option value="1" selected>Normal</option><option value="2">Rápido</option></select>
       </label>
     </div>
-    <p id="ginfo" class="dim small" aria-label="Informações do GIF"></p>
+    <div id="status"><span id="msg" role="status" aria-live="polite"></span><span id="ginfo" class="dim" aria-label="Informações do GIF"></span></div>
   </section>
 
   <aside id="tools" aria-label="Ferramentas">
-    <p class="q">O que você quer fazer?</p>
     <div id="tabs" role="tablist">
       <button id="tabBlur" class="tab on" role="tab" aria-selected="true">Borrar dados pessoais</button>
       <button id="tabCut" class="tab" role="tab" aria-selected="false">Apagar frames</button>
     </div>
 
     <div id="panelBlur" role="tabpanel">
-      <p class="step"><span class="n">1</span>Desenhe, sobre a imagem, um retângulo em cima do dado que você quer borrar (CNPJ, CPF, nome, e-mail…).</p>
+      <p class="step"><span class="n">1</span><span>Desenhe um retângulo sobre cada dado que quer borrar (CNPJ, CPF, nome, e-mail…). Pode marcar <b>várias áreas</b>.</span></p>
       <div class="row">
-        <button id="full" class="btn">Marcar a imagem toda</button>
         <span id="rinfo" class="dim"></span>
+        <button id="clr" class="btn sm" hidden title="Tira todas as áreas marcadas (Esc). Del tira só a área escolhida.">Desmarcar</button>
+        <button id="full" class="btn sm">Imagem toda</button>
       </div>
       <p class="step"><span class="n">2</span>Escolha a força do borrão.</p>
       <div class="slider"><span>Leve</span><input type="range" id="rad" min="1" max="40" value="10" aria-label="Força do borrão"><span>Forte</span></div>
@@ -363,7 +395,7 @@ dialog td:first-child { white-space: nowrap; }
         <label><input type="radio" name="scope" value="cur"> <span id="sCur">Só o frame atual</span></label>
       </div>
       <div class="actions">
-        <button id="blur" class="btn pri big wide">Borrar esta área</button>
+        <button id="blur" class="btn pri big wide"><span id="blurt">Borrar esta área</span></button>
         <button id="unblur" class="btn link">Tirar o borrão destes frames</button>
       </div>
     </div>
@@ -376,7 +408,7 @@ dialog td:first-child { white-space: nowrap; }
       <button id="before" class="btn wide cutbtn"><span class="ico" data-k="xxc.."></span><span>Apagar tudo antes do frame atual</span></button>
       <button id="after" class="btn wide cutbtn"><span class="ico" data-k="..cxx"></span><span>Apagar tudo depois do frame atual</span></button>
       <button id="keep" class="btn wide cutbtn"><span class="ico" data-k="xkkxx"></span><span>Ficar só com os frames marcados</span></button>
-      <p class="dim small">Errou? Clique em <b>Desfazer</b> (embaixo).</p>
+      <p class="dim small">Errou? Clique em <b>Desfazer</b> (no alto).</p>
     </div>
 
     <details id="more">
@@ -389,40 +421,29 @@ dialog td:first-child { white-space: nowrap; }
         </select>
       </label>
       <label class="opt chk"><input type="checkbox" id="merge"> Ao apagar frames, manter o tempo total do GIF</label>
-      <label class="opt chk"><input type="checkbox" id="keeprect"> Manter o retângulo depois de borrar</label>
+      <label class="opt chk"><input type="checkbox" id="keeprect"> Manter as áreas marcadas depois de borrar</label>
       <label class="opt chk"><input type="checkbox" id="multi"> Clicar nos frames marca vários (para celular)</label>
     </details>
   </aside>
 
   <section id="timeline" aria-label="Linha do tempo">
     <div id="tlh">
-      <span id="tinfo"><b>Frames do GIF</b> <span class="dim">— cada frame é uma imagem</span></span>
-      <label class="dim">Tamanho <input type="range" id="zoom" min="40" max="130" value="72" aria-label="Tamanho dos frames"></label>
-    </div>
-    <div id="seltools" role="group" aria-label="Marcar frames">
+      <span id="tinfo"><b>Frames do GIF</b></span>
+      <div id="seltools" role="group" aria-label="Marcar frames">
       <span class="dim">Marcar:</span>
       <button id="all" class="btn sm">Todos</button>
       <button id="none" class="btn sm">Nenhum</button>
       <button id="inv" class="btn sm" title="Marca os que estão desmarcados e desmarca os marcados">Inverter</button>
-      <button id="selB" class="btn sm" title="Marca todos os frames antes do frame atual">Antes do atual</button>
-      <button id="selA" class="btn sm" title="Marca todos os frames depois do frame atual">Depois do atual</button>
-      <span class="rng">De <input type="number" id="rfrom" min="1" inputmode="numeric" aria-label="Do frame número"> até <input type="number" id="rto" min="1" inputmode="numeric" aria-label="Até o frame número"> <button id="rsel" class="btn sm">Marcar intervalo</button></span>
+      <button id="selB" class="btn sm" title="Marca todos os frames antes do frame atual">Antes</button>
+      <button id="selA" class="btn sm" title="Marca todos os frames depois do frame atual">Depois</button>
+      <span class="rng">De <input type="number" id="rfrom" min="1" inputmode="numeric" aria-label="Do frame número"> até <input type="number" id="rto" min="1" inputmode="numeric" aria-label="Até o frame número"> <button id="rsel" class="btn sm">Marcar</button></span>
+      </div>
+      <label class="dim tsz" title="Tamanho das miniaturas"><span aria-hidden="true">▫</span><input type="range" id="zoom" min="40" max="130" value="72" aria-label="Tamanho dos frames"><span aria-hidden="true" class="big2">□</span></label>
     </div>
     <div id="tl"><div id="strip"></div></div>
   </section>
 </main>
 
-<footer id="bottom" hidden>
-  <div class="left">
-    <button id="undo" class="btn">↶ Desfazer</button>
-    <button id="redo" class="btn">↷ Refazer</button>
-    <span id="msg" role="status" aria-live="polite"></span>
-  </div>
-  <div class="right">
-    <span id="dirty" class="dirty" hidden>● Alterações não salvas</span>
-    <button id="exp" class="btn ok big">Salvar GIF</button>
-  </div>
-</footer>
 
 <div id="recbar" hidden role="status" aria-live="polite">
   <span class="recdot" aria-hidden="true"></span><span id="rect">Gravando…</span>
@@ -454,10 +475,11 @@ dialog td:first-child { white-space: nowrap; }
   <h3>Como usar</h3>
   <ol class="how">
     <li><b>Escolha o GIF</b> no botão azul ou arrastando o arquivo para a janela. Se for um <b>vídeo</b> (MP4, WebM), ele é convertido em GIF na hora: até 1280 px de largura, 15 frames por segundo e 256 cores. Vídeo menor que isso é mantido como está. Dá para escolher vários vídeos de uma vez.</li>
-    <li><b>Edite.</b> Em <i>Borrar dados pessoais</i>, desenhe um retângulo sobre o CNPJ, CPF, nome ou outro dado e clique em <i>Borrar</i>. Em <i>Apagar frames</i>, marque frames na linha do tempo e clique em <i>Apagar</i>.</li>
+    <li><b>Edite.</b> Em <i>Borrar dados pessoais</i>, desenhe um retângulo sobre cada CNPJ, CPF, nome ou outro dado (pode marcar vários) e clique em <i>Borrar</i>. Em <i>Apagar frames</i>, marque frames na linha do tempo e clique em <i>Apagar</i>.</li>
     <li><b>Clique em Salvar GIF.</b> O arquivo novo vai para a pasta de downloads. O GIF original não é alterado. Ao salvar, o arquivo é diminuído sem perder qualidade (cada pixel é conferido). Se ainda passar de 2,9 MB, o editor pergunta se você quer comprimir só o necessário para caber.</li>
   </ol>
-  <p>Errou? Clique em <b>Desfazer</b>. Dá para voltar vários passos.</p>
+  <p>Errou? Clique em <b>Desfazer</b>, no alto. Dá para voltar vários passos.</p>
+  <p><b>Ver de perto:</b> segure <kbd>Ctrl</kbd> e gire a roda do mouse sobre a imagem (ou use <b>−</b> / <b>+</b> embaixo da imagem). Com a imagem ampliada, a roda rola e o botão do meio do mouse arrasta. <i>Ajustar</i> volta a mostrar a imagem inteira.</p>
   <p><b>Gravar a tela:</b> clique em <i>Gravar a tela</i> e escolha a tela, a janela ou a aba. A gravação começa depois de uma contagem de 3 segundos. Para terminar, volte a esta aba e clique em <i>Parar e abrir no editor</i>, ou use o botão “Parar compartilhamento” que o navegador mostra. A gravação vira GIF e abre no editor, para você borrar e cortar. Sem som, no máximo 5 minutos. A largura e os frames por segundo seguem as <i>Opções para vídeos</i>. Se você parar pelo botão do navegador estando em outra aba, volte para a aba do editor: a conversão em GIF começa assim que você voltar.</p>
   <h4>Marcar frames (com o mouse)</h4>
   <table>
@@ -466,7 +488,7 @@ dialog td:first-child { white-space: nowrap; }
     <tr><td><kbd>Shift</kbd> + clique</td><td>marca do último frame clicado até este (intervalo)</td></tr>
     <tr><td><kbd>Ctrl</kbd> + clique</td><td>soma ou tira um frame da marcação</td></tr>
     <tr><td>Arrastar sobre os frames</td><td>marca vários; ao chegar na ponta da linha do tempo ela rola sozinha</td></tr>
-    <tr><td>Barra “Marcar”, embaixo</td><td>todos, nenhum, inverter, antes/depois do atual ou “de … até …”</td></tr>
+    <tr><td>Barra “Marcar”, acima dos frames</td><td>todos, nenhum, inverter, antes/depois do atual ou “de … até …”</td></tr>
   </table>
   <h4>Atalhos do teclado (opcional)</h4>
   <table>
@@ -478,16 +500,19 @@ dialog td:first-child { white-space: nowrap; }
     <tr><td><kbd>Shift</kbd> + <kbd>←</kbd> <kbd>→</kbd></td><td>aumenta a marcação, um frame por vez</td></tr>
     <tr><td><kbd>Home</kbd> <kbd>End</kbd> <kbd>PgUp</kbd> <kbd>PgDn</kbd></td><td>primeiro, último, 10 para trás, 10 para frente (com <kbd>Shift</kbd> marca junto)</td></tr>
     <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>Ctrl</kbd>+<kbd>I</kbd></td><td>marcar todos / inverter a marcação</td></tr>
-    <tr><td><kbd>Del</kbd></td><td>apagar os frames marcados</td></tr>
+    <tr><td><kbd>Del</kbd> (aba Apagar)</td><td>apagar os frames marcados</td></tr>
     <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>apagar tudo antes / depois do frame atual</td></tr>
-    <tr><td><kbd>B</kbd> ou <kbd>Enter</kbd></td><td>borrar a área marcada</td></tr>
+    <tr><td><kbd>B</kbd> ou <kbd>Enter</kbd></td><td>borrar as áreas marcadas</td></tr>
+    <tr><td><kbd>Del</kbd> (aba Borrar)</td><td>tirar a área escolhida (a que tem as alças)</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + roda, <kbd>Ctrl</kbd>+<kbd>+</kbd> / <kbd>−</kbd></td><td>zoom na imagem</td></tr>
+    <tr><td><kbd>Ctrl</kbd>+<kbd>0</kbd></td><td>ajustar a imagem à tela</td></tr>
     <tr><td><kbd>U</kbd></td><td>tirar o borrão</td></tr>
     <tr><td><kbd>F</kbd></td><td>marcar a imagem toda</td></tr>
     <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>força do borrão</td></tr>
-    <tr><td><kbd>Alt</kbd> + setas</td><td>mover a área marcada (com <kbd>Shift</kbd> anda de 10 em 10)</td></tr>
-    <tr><td><kbd>Esc</kbd></td><td>limpar marcações</td></tr>
+    <tr><td><kbd>Alt</kbd> + setas</td><td>mover a área escolhida (com <kbd>Shift</kbd> anda de 10 em 10)</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>tirar todas as áreas e a marcação dos frames</td></tr>
   </table>
-  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão 1.5.0</span><button id="helpx" class="btn pri">Entendi</button></p>
+  <p class="foot"><span class="dim small verfoot">Editor de GIF · versão 1.6.0</span><button id="helpx" class="btn pri">Entendi</button></p>
 </dialog>
 
 <script>(function (root) {
@@ -1388,7 +1413,7 @@ root.VideoGif = { convert };
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d'), strip = $('strip');
 let g = null, comp = null, srcBytes = null, srcName = 'gif', frames = [], sel = new Set(), cur = null, anchor = null;
-let rect = null, drag = null, live = null, undoSt = [], redoSt = [], playing = null, tdrag = null;
+let rect = null, areas = [], drag = null, live = null, undoSt = [], redoSt = [], playing = null, tdrag = null;
 let savedSize = 0, suppressClick = false, msgT = 0, loading = false, dirty = false, tab = 'blur', cancelled = false, fromVideo = false;
 const tmp = document.createElement('canvas'), tctx = tmp.getContext('2d');
 
@@ -1399,7 +1424,7 @@ const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB
 
 // mensagem no rodapé: kind = 'ok' (verde, fica), 'err' (vermelho, fica) ou nada (some depois de um tempo)
 function say(t, kind) {
-  const m = $('msg'); m.textContent = t; m.className = kind || ''; m.style.opacity = 1; clearTimeout(msgT);
+  const m = $('msg'); m.textContent = t; m.title = t; m.className = kind || ''; m.style.opacity = 1; clearTimeout(msgT);
   const w = $('wmsg'); w.textContent = t; w.className = kind || ''; w.hidden = !t;   // na tela inicial não há rodapé
   if (!kind) msgT = setTimeout(() => { m.style.opacity = .5; }, 6000);
 }
@@ -1446,12 +1471,12 @@ function thumb(f) {
   tctx.putImageData(view(f), 0, 0);
   f.th.getContext('2d').drawImage(tmp, 0, 0, f.th.width, f.th.height);
 }
-function liveData() {   // pré-visualização do borrão no frame atual, antes de aplicar
-  if (!rect || drag || !cur || tab !== 'blur') return null;
-  const r = +$('rad').value, key = [cur.i, cur.blurs.length, rect.x | 0, rect.y | 0, rect.w | 0, rect.h | 0, r].join();
+function liveData() {   // pré-visualização do borrão no frame atual, antes de aplicar (todas as áreas marcadas)
+  if (!areas.length || drag || !cur || tab !== 'blur') return null;
+  const r = +$('rad').value, key = [cur.i, cur.blurs.length, r, ...areas.map(a => [a.x | 0, a.y | 0, a.w | 0, a.h | 0])].join();
   if (!live || live.key !== key) {
     const d = new ImageData(new Uint8ClampedArray(view(cur).data), g.W, g.H);
-    GifCore.blurRegion(d.data, g.W, g.H, rect.x, rect.y, rect.w, rect.h, r);
+    for (const a of areas) GifCore.blurRegion(d.data, g.W, g.H, a.x, a.y, a.w, a.h, r);
     live = { key, data: d };
   }
   return live.data;
@@ -1467,11 +1492,14 @@ function draw() {
   ctx.lineWidth = Math.max(1, 2 * u);
   ctx.strokeStyle = 'rgba(245,147,20,.95)';   // contorno laranja = já borrado neste frame
   for (const b of cur.blurs) ctx.strokeRect(b.x, b.y, b.w, b.h);
-  if (rect && tab === 'blur') {
-    ctx.lineWidth = Math.max(1, 3 * u); ctx.strokeStyle = '#000'; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.lineWidth = Math.max(1, 2 * u); ctx.setLineDash([7 * u, 5 * u]); ctx.strokeStyle = '#fff'; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  if (tab !== 'blur') return;
+  for (const a of areas) {   // áreas marcadas: tracejado preto e branco (a ativa também ganha as alças)
+    ctx.setLineDash([]); ctx.lineWidth = Math.max(1, 3 * u); ctx.strokeStyle = '#000'; ctx.strokeRect(a.x, a.y, a.w, a.h);
+    ctx.lineWidth = Math.max(1, 2 * u); ctx.setLineDash([7 * u, 5 * u]); ctx.strokeStyle = a === rect ? '#fff' : '#cfe0ff'; ctx.strokeRect(a.x, a.y, a.w, a.h);
+  }
+  if (rect) {
     ctx.setLineDash([]); ctx.strokeStyle = '#1763d9'; ctx.fillStyle = '#fff'; ctx.lineWidth = Math.max(1, 2 * u);
-    const s = 12 * u;
+    const s = 10 * u;
     for (const [hx, hy] of [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1, 1]]) {
       const x = rect.x + rect.w * hx - s / 2, y = rect.y + rect.h * hy - s / 2;
       ctx.fillRect(x, y, s, s); ctx.strokeRect(x, y, s, s);
@@ -1482,26 +1510,26 @@ function draw() {
 function infoText() {
   const n = frames.length, ms = frames.reduce((a, f) => a + dur(f), 0);
   const fps = ms ? n / (ms / 1000) : 0, f1 = v => v.toFixed(1).replace('.', ',').replace(/,0$/, '');
-  let t = `${g.W} × ${g.H} px · ${f1(fps)} fps · ${pl(n, 'frame', 'frames')} · ${fmt(ms)} · ${fromVideo ? 'convertido' : 'original'}: ${kb(srcBytes.length)}`;
+  let t = `${g.W} × ${g.H} px · ${f1(fps)} fps · ${fromVideo ? 'convertido' : 'original'}: ${kb(srcBytes.length)}`;   // frames e duração ficam na linha do tempo
   if (savedSize && !dirty) t += ` · salvo: ${kb(savedSize)}`;
   return t;
 }
+// dica sobre a imagem: só enquanto ainda não há área marcada na aba "Borrar"
 function hintText() {
-  if (tab === 'blur') {
-    if (!rect) return 'Arraste sobre a imagem para marcar o dado que você quer borrar (CNPJ, CPF, nome…).';
-    return 'Área marcada. Para ajustar, arraste as bordas. Depois clique em “Borrar esta área”.';
-  }
-  return 'Marque os frames na linha do tempo: clique na caixinha ○ de cada um, arraste sobre eles ou use Shift + clique.';
+  return tab === 'blur' && !areas.length ? 'Arraste sobre a imagem para marcar o que quer borrar' : '';
 }
 function updateUI() {
   const has = !!g, n = frames.length, i = frames.indexOf(cur);
-  $('welcome').hidden = has; $('editor').hidden = !has; $('bottom').hidden = !has; $('openAgain').hidden = !has; $('recAgain').hidden = !has;
+  $('welcome').hidden = has; $('editor').hidden = !has; $('edActs').hidden = !has; document.body.classList.toggle('ed', has); $('openAgain').hidden = !has; $('recAgain').hidden = !has;
   $('dirty').hidden = !(has && dirty);
   if (!has) return;
-  $('hint').textContent = hintText(); $('ginfo').textContent = infoText();
+  { const h = hintText(); $('hint').textContent = h; $('hint').hidden = !h; } $('ginfo').textContent = infoText();
   $('undo').disabled = !undoSt.length; $('redo').disabled = !redoSt.length;
   $('prev').disabled = i < 1; $('next').disabled = i >= n - 1;
-  $('blur').disabled = !rect; $('rinfo').textContent = rect ? `Área: ${Math.round(rect.w)} × ${Math.round(rect.h)}` : 'Nenhuma área marcada';
+  const na = areas.length;
+  $('blur').disabled = !na; $('blurt').textContent = na > 1 ? `Borrar as ${na} áreas` : 'Borrar esta área';
+  $('rinfo').textContent = !na ? 'Nenhuma área marcada' : na === 1 ? `1 área: ${Math.round(areas[0].w)} × ${Math.round(areas[0].h)}` : `${na} áreas marcadas`;
+  $('clr').hidden = !na;
   $('del').disabled = !sel.size; $('delt').textContent = sel.size ? `Apagar ${pl(sel.size, 'frame marcado', 'frames marcados')}` : 'Apagar os frames marcados';
   $('selB').disabled = i < 1; $('selA').disabled = i < 0 || i >= n - 1;
   $('rfrom').max = $('rto').max = n; $('rsel').disabled = !n;
@@ -1549,7 +1577,7 @@ function refresh(scroll) {
     const total = frames.reduce((a, f) => a + dur(f), 0), nb = frames.filter(f => f.blurs.length).length;
     $('tinfo').innerHTML = '';
     const b = document.createElement('b'); b.textContent = `${pl(frames.length, 'frame', 'frames')} · ${fmt(total)}`;
-    const s = document.createElement('span'); s.className = 'dim'; s.textContent = nb ? ` · ${pl(nb, 'com borrão', 'com borrão')} (marca laranja)` : ' — cada frame é uma imagem do GIF';
+    const s = document.createElement('span'); s.className = 'dim'; s.textContent = '';   // frames com borrão: faixa laranja na miniatura
     $('tinfo').append(b, s);
     $('fi').textContent = `Frame ${frames.indexOf(cur) + 1} de ${frames.length} · ${dur(cur)} ms`;
   }
@@ -1678,10 +1706,10 @@ async function openBytes(bytes, name, isConv) {
   playing && togglePlay(); savedSize = 0;
   srcBytes = bytes; g = ng; comp = c; srcName = baseName(name); fromVideo = !!isConv;
   cv.width = W; cv.height = H;
-  frames = list; undoSt = []; redoSt = []; sel = new Set(); cur = frames[0]; anchor = cur; rect = null; live = null; dirty = !!isConv;
+  frames = list; undoSt = []; redoSt = []; sel = new Set(); cur = frames[0]; anchor = cur; areas = []; rect = null; live = null; zoomFit = true; dirty = !!isConv;
   lastSel = new Set(); autoScope(); $('rfrom').value = $('rto').value = '';
   setTab('blur');
-  refresh(true);
+  refresh(true); applyZoom(); $('stage').scrollTo(0, 0);
   return true;
 }
 async function loadGif(file) {
@@ -1997,50 +2025,115 @@ window.addEventListener('drop', e => {
 });
 window.addEventListener('beforeunload', e => { if (dirty || recWait) { e.preventDefault(); e.returnValue = ''; } });
 
-// ---------- retângulo do borrão (criar, mover, redimensionar) ----------
+// ---------- áreas do borrão (criar, mover, redimensionar; várias de uma vez) ----------
+// areas = todas as áreas marcadas; rect = a área ativa (a que tem as alças e é movida pelo teclado)
 const pos = e => { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * g.W / r.width, y: (e.clientY - r.top) * g.H / r.height }; };
-function hit(p, touch) {
-  if (!rect) return null;
-  const t = (touch ? 22 : 12) * g.W / cv.getBoundingClientRect().width, { x, y, w, h } = rect;
-  if (!(p.x > x - t && p.x < x + w + t && p.y > y - t && p.y < y + h + t)) return null;
+function hitOne(a, p, touch) {
+  // borda pega até 10 px da tela por dentro, mas só 5 px por fora (assim dá para desenhar outra área bem ao lado)
+  const s = g.W / cv.getBoundingClientRect().width, t = (touch ? 20 : 10) * s, o = (touch ? 12 : 5) * s, { x, y, w, h } = a;
+  if (!(p.x > x - o && p.x < x + w + o && p.y > y - o && p.y < y + h + o)) return null;
   let m = '';
   if (Math.abs(p.y - y) < t) m += 'n'; else if (Math.abs(p.y - (y + h)) < t) m += 's';
   if (Math.abs(p.x - x) < t) m += 'w'; else if (Math.abs(p.x - (x + w)) < t) m += 'e';
   if (m) return m;
   return (p.x > x && p.x < x + w && p.y > y && p.y < y + h) ? 'move' : null;
 }
+// a área ativa tem prioridade (bordas e alças); nas outras, clicar dentro escolhe e move
+function hit(p, touch) {
+  if (rect) { const m = hitOne(rect, p, touch); if (m) return { a: rect, m }; }
+  for (let k = areas.length - 1; k >= 0; k--) if (areas[k] !== rect && hitOne(areas[k], p, false) === 'move') return { a: areas[k], m: 'move' };
+  return null;
+}
+function dropArea(a) { areas = areas.filter(x => x !== a); if (rect === a) rect = areas[areas.length - 1] || null; live = null; }
+function clearAreas() { areas = []; rect = null; live = null; }
 const CUR = { n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', ne: 'nesw-resize', sw: 'nesw-resize', nw: 'nwse-resize', se: 'nwse-resize', move: 'move' };
 cv.addEventListener('pointerdown', e => {
-  if (!g || tab !== 'blur') return;
+  if (!g || tab !== 'blur' || e.button !== 0) return;
   if (playing) togglePlay();
   cv.setPointerCapture(e.pointerId);
-  const p = pos(e), m = hit(p, e.pointerType === 'touch');
-  drag = m ? { m, start: p, orig: { ...rect } } : { m: 'new', start: p };
-  if (!m) rect = null;
-  live = null;
+  const p = pos(e), h = hit(p, e.pointerType === 'touch');
+  if (h) { rect = h.a; drag = { m: h.m, start: p, orig: { ...rect } }; }
+  else { rect = { x: p.x, y: p.y, w: 0, h: 0 }; areas.push(rect); drag = { m: 'new', start: p }; }
+  live = null; redraw();
 });
 cv.addEventListener('pointermove', e => {
   if (!g || tab !== 'blur') return; const p = pos(e);
-  if (!drag) { cv.style.cursor = CUR[hit(p, e.pointerType === 'touch')] || 'crosshair'; return; }
+  if (!drag) { const h = hit(p, e.pointerType === 'touch'); cv.style.cursor = (h && CUR[h.m]) || 'crosshair'; return; }
   const d = drag;
   if (d.m === 'new') {
     const x = clamp(Math.min(d.start.x, p.x), 0, g.W), y = clamp(Math.min(d.start.y, p.y), 0, g.H);
-    rect = { x, y, w: clamp(Math.max(d.start.x, p.x), 0, g.W) - x, h: clamp(Math.max(d.start.y, p.y), 0, g.H) - y };
+    Object.assign(rect, { x, y, w: clamp(Math.max(d.start.x, p.x), 0, g.W) - x, h: clamp(Math.max(d.start.y, p.y), 0, g.H) - y });
   } else if (d.m === 'move') {
-    rect = { ...d.orig, x: clamp(d.orig.x + p.x - d.start.x, 0, g.W - d.orig.w), y: clamp(d.orig.y + p.y - d.start.y, 0, g.H - d.orig.h) };
+    Object.assign(rect, { x: clamp(d.orig.x + p.x - d.start.x, 0, g.W - d.orig.w), y: clamp(d.orig.y + p.y - d.start.y, 0, g.H - d.orig.h) });
   } else {
     let l = d.orig.x, t = d.orig.y, r = l + d.orig.w, b = t + d.orig.h;
     if (d.m.includes('w')) l = Math.min(clamp(p.x, 0, g.W), r - 4);
     if (d.m.includes('e')) r = Math.max(clamp(p.x, 0, g.W), l + 4);
     if (d.m.includes('n')) t = Math.min(clamp(p.y, 0, g.H), b - 4);
     if (d.m.includes('s')) b = Math.max(clamp(p.y, 0, g.H), t + 4);
-    rect = { x: l, y: t, w: r - l, h: b - t };
+    Object.assign(rect, { x: l, y: t, w: r - l, h: b - t });
   }
-  redraw();
+  live = null; redraw();
 });
-const endDrag = () => { if (!drag) return; drag = null; if (rect && (rect.w < 3 || rect.h < 3)) rect = null; live = null; redraw(); };
+const endDrag = () => { if (!drag) return; drag = null; if (rect && (rect.w < 3 || rect.h < 3)) dropArea(rect); live = null; redraw(); };
 cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
 
+// ---------- zoom da visualização ----------
+// zoomFit = a imagem inteira cabe na área (nunca aumenta além de 100%); senão, zoom fixo e a área rola.
+const stage = $('stage'), ZSTEPS = [0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.5, 2, 3, 4, 6, 8];
+let zoom = 1, zoomFit = true;
+const narrow = matchMedia('(max-width: 900px)');
+function fitScale() {
+  const cs = getComputedStyle(stage), pw = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight), ph = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  cv.style.width = cv.style.height = '0px';   // mede a área sem a imagem (sem barras de rolagem)
+  const w = stage.clientWidth - pw, h = narrow.matches ? innerHeight * 0.6 : stage.clientHeight - ph;
+  return Math.max(0.05, Math.min(1, w / g.W, h / g.H));
+}
+function curZoom() { return zoomFit ? fitScale() : zoom; }
+function applyZoom() {
+  if (!g) return;
+  const z = zoomFit ? fitScale() : zoom;
+  cv.style.width = g.W * z + 'px'; cv.style.height = g.H * z + 'px';
+  cv.classList.toggle('px', z >= 2);   // de perto, mostra os pixels de verdade (para marcar com precisão)
+  stage.classList.toggle('zoomed', stage.scrollWidth > stage.clientWidth + 1 || stage.scrollHeight > stage.clientHeight + 1);
+  $('zlv').textContent = Math.round(z * 100) + '%';
+  $('zfit').disabled = zoomFit; $('z100').disabled = !zoomFit && zoom === 1;
+  $('zin').disabled = z >= ZSTEPS[ZSTEPS.length - 1]; $('zout').disabled = z <= ZSTEPS[0];
+  redraw();
+}
+// muda o zoom mantendo parado o ponto da imagem sob (cx, cy); sem ponto, usa o centro da área
+function setZoom(z, cx, cy) {
+  if (!g) return;
+  const sr = stage.getBoundingClientRect();
+  if (cx == null) { cx = sr.left + sr.width / 2; cy = sr.top + sr.height / 2; }
+  const r = cv.getBoundingClientRect(), fx = (cx - r.left) / r.width, fy = (cy - r.top) / r.height;
+  zoom = clamp(z, ZSTEPS[0], ZSTEPS[ZSTEPS.length - 1]); zoomFit = false;
+  applyZoom();
+  const r2 = cv.getBoundingClientRect();
+  stage.scrollLeft += r2.left + fx * r2.width - cx; stage.scrollTop += r2.top + fy * r2.height - cy;
+}
+function zoomStep(dir, cx, cy) {
+  const z = curZoom(), next = dir > 0 ? ZSTEPS.find(s => s > z + 1e-3) : [...ZSTEPS].reverse().find(s => s < z - 1e-3);
+  if (next) setZoom(next, cx, cy);
+}
+function zoomToFit() { zoomFit = true; applyZoom(); }
+$('zin').onclick = () => zoomStep(1); $('zout').onclick = () => zoomStep(-1); $('zfit').onclick = zoomToFit; $('z100').onclick = () => setZoom(1);
+stage.addEventListener('wheel', e => {   // Ctrl + roda = zoom no ponto do mouse; só a roda = rola a imagem ampliada
+  if (!g || !(e.ctrlKey || e.metaKey)) return;
+  e.preventDefault(); zoomStep(e.deltaY < 0 ? 1 : -1, e.clientX, e.clientY);
+}, { passive: false });
+// arrastar para mover a imagem ampliada: botão do meio, ou botão esquerdo fora da imagem / na aba "Apagar frames"
+let pan = null;
+stage.addEventListener('pointerdown', e => {
+  if (!g || !stage.classList.contains('zoomed')) return;
+  if (!(e.button === 1 || (e.button === 0 && (e.target !== cv || tab !== 'blur')))) return;
+  e.preventDefault(); stage.setPointerCapture(e.pointerId);
+  pan = { x: e.clientX, y: e.clientY, l: stage.scrollLeft, t: stage.scrollTop }; stage.classList.add('panning');
+});
+stage.addEventListener('pointermove', e => { if (pan) { stage.scrollLeft = pan.l - (e.clientX - pan.x); stage.scrollTop = pan.t - (e.clientY - pan.y); } });
+const endPan = () => { pan = null; stage.classList.remove('panning'); };
+stage.addEventListener('pointerup', endPan); stage.addEventListener('pointercancel', endPan);
+new ResizeObserver(() => { if (g && zoomFit) applyZoom(); }).observe(stage);
 // ---------- ações ----------
 function scopeFrames() {
   if (!g) return [];
@@ -2082,19 +2175,19 @@ async function redo() {
 }
 async function doBlur() {
   if (!g || loading) return;
-  if (!rect) { setTab('blur'); say('Primeiro desenhe um retângulo sobre a imagem, em cima do dado que quer borrar.', 'err'); return; }
-  const t = scopeFrames(), rc = { ...rect }, r = +$('rad').value;
+  if (!areas.length) { setTab('blur'); say('Primeiro desenhe um retângulo sobre a imagem, em cima do dado que quer borrar.', 'err'); return; }
+  const t = scopeFrames(), rcs = areas.map(a => ({ x: a.x, y: a.y, w: a.w, h: a.h })), r = +$('rad').value;
   if (!t.length) { say('Nenhum frame escolhido para borrar.', 'err'); return; }
   await work(`Borrando os dados em ${pl(t.length, 'frame', 'frames')}…`, async () => {
     pushHist();
     for (let i = 0; i < t.length; i++) {
-      const f = t[i]; f.blurs.push({ ...rc, r }); f.view = null; thumb(f);
+      const f = t[i]; for (const rc of rcs) f.blurs.push({ ...rc, r }); f.view = null; thumb(f);
       if (i % 3 === 2 || i === t.length - 1) { progress((i + 1) / t.length, `${i + 1} de ${t.length} frames`); await sleep(8); }
     }
-    if (!$('keeprect').checked) rect = null;
+    if (!$('keeprect').checked) clearAreas();
     refresh();
   }, 'Dados borrados!');
-  say(`Pronto! Os dados foram borrados em ${pl(t.length, 'frame', 'frames')}. Errou? Clique em Desfazer.`, 'ok');
+  say(`Pronto! ${rcs.length > 1 ? `As ${rcs.length} áreas foram borradas` : 'Os dados foram borrados'} em ${pl(t.length, 'frame', 'frames')}. Errou? Clique em Desfazer.`, 'ok');
 }
 async function doUnblur() {
   if (loading) return;
@@ -2253,12 +2346,12 @@ async function doExport() {
   say(`Pronto! Salvei “${name}” (${kb(srcBytes.length)} → ${kb(bytes.length)}).${note} Procure na pasta de downloads.`, 'ok');
   draw();
 }
-function nudge(dx, dy) { if (!rect) return; rect = { ...rect, x: clamp(rect.x + dx, 0, g.W - rect.w), y: clamp(rect.y + dy, 0, g.H - rect.h) }; live = null; redraw(); }
+function nudge(dx, dy) { if (!rect) return; Object.assign(rect, { x: clamp(rect.x + dx, 0, g.W - rect.w), y: clamp(rect.y + dy, 0, g.H - rect.h) }); live = null; redraw(); }
 function setRadius(v) { v = clamp(v, 1, 40); $('rad').value = v; live = null; redraw(); }
 function markAll() { sel = new Set(frames); refresh(); }
 function markNone() { sel = new Set(); refresh(); }
 function invert() { sel = new Set(frames.filter(f => !sel.has(f))); refresh(); }
-function fullArea() { if (!g) return; setTab('blur'); rect = { x: 0, y: 0, w: g.W, h: g.H }; live = null; redraw(); }
+function fullArea() { if (!g) return; setTab('blur'); rect = { x: 0, y: 0, w: g.W, h: g.H }; areas = [rect]; live = null; redraw(); }
 
 const help = $('help');
 const openHelp = () => help.open ? help.close() : help.showModal();
@@ -2266,7 +2359,7 @@ const click = (id, fn) => $(id).onclick = fn;
 click('play', togglePlay); click('prev', () => step(-1)); click('next', () => step(1));
 click('del', doDel); click('keep', doKeep); click('before', doBefore); click('after', doAfter);
 click('undo', undo); click('redo', redo); click('blur', doBlur); click('unblur', doUnblur); click('exp', doExport);
-click('all', markAll); click('none', markNone); click('inv', invert); click('full', fullArea);
+click('clr', () => { clearAreas(); redraw(); }); click('all', markAll); click('none', markNone); click('inv', invert); click('full', fullArea);
 click('selB', markBefore); click('selA', markAfter); click('rsel', markRange);
 click('recStart', startRecording); click('recAgain', startRecording);
 click('recStop', () => stopRecording(false)); click('recCancel', () => stopRecording(true));
@@ -2308,12 +2401,19 @@ window.addEventListener('keydown', e => {
   else if (ctrl && (K === 'y' || (K === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
   else if (ctrl && K === 'a') { e.preventDefault(); markAll(); }
   else if (ctrl && K === 'i') { e.preventDefault(); invert(); }
+  else if (ctrl && (K === '=' || K === '+')) { e.preventDefault(); zoomStep(1); }
+  else if (ctrl && (K === '-' || K === '_')) { e.preventDefault(); zoomStep(-1); }
+  else if (ctrl && K === '0') { e.preventDefault(); zoomToFit(); }
   else if (ctrl) return;
   else if (e.altKey && k.startsWith('Arrow')) {
     e.preventDefault(); const s = e.shiftKey ? 10 : 1;
     nudge(k === 'ArrowLeft' ? -s : k === 'ArrowRight' ? s : 0, k === 'ArrowUp' ? -s : k === 'ArrowDown' ? s : 0);
   }
-  else if (k === 'Delete') { e.preventDefault(); sel.size ? doDel() : removeFrames(new Set([cur])); }
+  else if (k === 'Delete' || k === 'Backspace') {   // na aba Borrar, com área marcada: apaga a área; senão, apaga frames
+    e.preventDefault();
+    if (tab === 'blur' && rect) { dropArea(rect); redraw(); }
+    else if (k === 'Delete') sel.size ? doDel() : removeFrames(new Set([cur]));
+  }
   else if (k === 'Enter') { if (t.tagName === 'BUTTON') return; e.preventDefault(); if (tab === 'blur') doBlur(); }   // na aba "Apagar frames" a área do borrão está escondida: não borra às cegas
   else if (K === 'b') { if (tab === 'blur') doBlur(); }
   else if (K === 'u') { if (tab === 'blur') doUnblur(); }
@@ -2322,7 +2422,7 @@ window.addEventListener('keydown', e => {
   else if (k === ']') doAfter();
   else if (k === '+' || k === '=') setRadius(+$('rad').value + 1);
   else if (k === '-' || k === '_') setRadius(+$('rad').value - 1);
-  else if (k === 'Escape') { rect = null; sel = new Set(); refresh(); }
+  else if (k === 'Escape') { clearAreas(); sel = new Set(); refresh(); }
   else if (k === 'ArrowRight') { e.preventDefault(); go(1, e.shiftKey); }
   else if (k === 'ArrowLeft') { e.preventDefault(); go(-1, e.shiftKey); }
   else if (k === 'Home') { e.preventDefault(); go(-1e9, e.shiftKey); }

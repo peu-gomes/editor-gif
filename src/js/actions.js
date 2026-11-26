@@ -39,19 +39,19 @@ async function redo() {
 }
 async function doBlur() {
   if (!g || loading) return;
-  if (!rect) { setTab('blur'); say('Primeiro desenhe um retângulo sobre a imagem, em cima do dado que quer borrar.', 'err'); return; }
-  const t = scopeFrames(), rc = { ...rect }, r = +$('rad').value;
+  if (!areas.length) { setTab('blur'); say('Primeiro desenhe um retângulo sobre a imagem, em cima do dado que quer borrar.', 'err'); return; }
+  const t = scopeFrames(), rcs = areas.map(a => ({ x: a.x, y: a.y, w: a.w, h: a.h })), r = +$('rad').value;
   if (!t.length) { say('Nenhum frame escolhido para borrar.', 'err'); return; }
   await work(`Borrando os dados em ${pl(t.length, 'frame', 'frames')}…`, async () => {
     pushHist();
     for (let i = 0; i < t.length; i++) {
-      const f = t[i]; f.blurs.push({ ...rc, r }); f.view = null; thumb(f);
+      const f = t[i]; for (const rc of rcs) f.blurs.push({ ...rc, r }); f.view = null; thumb(f);
       if (i % 3 === 2 || i === t.length - 1) { progress((i + 1) / t.length, `${i + 1} de ${t.length} frames`); await sleep(8); }
     }
-    if (!$('keeprect').checked) rect = null;
+    if (!$('keeprect').checked) clearAreas();
     refresh();
   }, 'Dados borrados!');
-  say(`Pronto! Os dados foram borrados em ${pl(t.length, 'frame', 'frames')}. Errou? Clique em Desfazer.`, 'ok');
+  say(`Pronto! ${rcs.length > 1 ? `As ${rcs.length} áreas foram borradas` : 'Os dados foram borrados'} em ${pl(t.length, 'frame', 'frames')}. Errou? Clique em Desfazer.`, 'ok');
 }
 async function doUnblur() {
   if (loading) return;
@@ -210,10 +210,10 @@ async function doExport() {
   say(`Pronto! Salvei “${name}” (${kb(srcBytes.length)} → ${kb(bytes.length)}).${note} Procure na pasta de downloads.`, 'ok');
   draw();
 }
-function nudge(dx, dy) { if (!rect) return; rect = { ...rect, x: clamp(rect.x + dx, 0, g.W - rect.w), y: clamp(rect.y + dy, 0, g.H - rect.h) }; live = null; redraw(); }
+function nudge(dx, dy) { if (!rect) return; Object.assign(rect, { x: clamp(rect.x + dx, 0, g.W - rect.w), y: clamp(rect.y + dy, 0, g.H - rect.h) }); live = null; redraw(); }
 function setRadius(v) { v = clamp(v, 1, 40); $('rad').value = v; live = null; redraw(); }
 function markAll() { sel = new Set(frames); refresh(); }
 function markNone() { sel = new Set(); refresh(); }
 function invert() { sel = new Set(frames.filter(f => !sel.has(f))); refresh(); }
-function fullArea() { if (!g) return; setTab('blur'); rect = { x: 0, y: 0, w: g.W, h: g.H }; live = null; redraw(); }
+function fullArea() { if (!g) return; setTab('blur'); rect = { x: 0, y: 0, w: g.W, h: g.H }; areas = [rect]; live = null; redraw(); }
 

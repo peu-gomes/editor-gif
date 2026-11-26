@@ -1,7 +1,7 @@
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d'), strip = $('strip');
 let g = null, comp = null, srcBytes = null, srcName = 'gif', frames = [], sel = new Set(), cur = null, anchor = null;
-let rect = null, drag = null, live = null, undoSt = [], redoSt = [], playing = null, tdrag = null;
+let rect = null, areas = [], drag = null, live = null, undoSt = [], redoSt = [], playing = null, tdrag = null;
 let savedSize = 0, suppressClick = false, msgT = 0, loading = false, dirty = false, tab = 'blur', cancelled = false, fromVideo = false;
 const tmp = document.createElement('canvas'), tctx = tmp.getContext('2d');
 
@@ -12,7 +12,7 @@ const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB
 
 // mensagem no rodapé: kind = 'ok' (verde, fica), 'err' (vermelho, fica) ou nada (some depois de um tempo)
 function say(t, kind) {
-  const m = $('msg'); m.textContent = t; m.className = kind || ''; m.style.opacity = 1; clearTimeout(msgT);
+  const m = $('msg'); m.textContent = t; m.title = t; m.className = kind || ''; m.style.opacity = 1; clearTimeout(msgT);
   const w = $('wmsg'); w.textContent = t; w.className = kind || ''; w.hidden = !t;   // na tela inicial não há rodapé
   if (!kind) msgT = setTimeout(() => { m.style.opacity = .5; }, 6000);
 }

@@ -44,7 +44,12 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 .brand h1 { font-size: 22px; }
 .priv { color: var(--ok-d); font-size: 14px; }
 .sub { color: var(--dim); font-size: 16px; font-weight: 600; }
-.top-actions { display: flex; gap: 8px; }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+/* editando: Desfazer/Refazer/Salvar ficam no topo (sem rodapé, sobra altura para o GIF) */
+.edacts { display: flex; gap: 8px; align-items: center; padding-left: 10px; margin-left: 2px; border-left: 1px solid var(--line); }
+#exp { font-weight: 600; padding-left: 20px; padding-right: 20px; }
+body.ed .priv { display: none; }
+@media (max-width: 1400px) { body.ed .sub, body.ed .ver { display: none; } }
 .ver { color: var(--dim); font-size: 13px; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; background: #f7f9fc; align-self: center; font-variant-numeric: tabular-nums; }
 .verwelcome { margin-top: 14px; }
 .verfoot { float: left; margin-top: 12px; }
@@ -62,18 +67,39 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 /* edição */
 #editor {
   flex: 1; min-height: var(--edmin, 560px); display: grid; gap: 12px; padding: 12px 20px;
-  grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 330px; grid-template-rows: minmax(0, 1fr) auto;
   grid-template-areas: "viewer tools" "timeline tools";
 }
-#viewer { grid-area: viewer; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.hint { background: var(--acc-bg); color: #0b3a82; border-radius: 10px; padding: 10px 14px; font-size: 17px; font-weight: 500; }
-#stage { flex: 1; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #e8ecf3; border-radius: 12px; padding: 8px; overflow: hidden; }
-#cv { max-width: 100%; max-height: 100%; touch-action: none; border-radius: 4px; box-shadow: 0 1px 6px rgba(0,0,0,.25);
+#viewer { grid-area: viewer; min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+/* área da imagem: o tamanho do GIF na tela é definido pelo zoom (ui-canvas.js); ampliado, a área rola */
+#stagew { flex: 1; min-height: 200px; position: relative; display: flex; }
+#stage { flex: 1; min-width: 0; display: flex; background: #e8ecf3; border-radius: 12px; padding: 8px; overflow: auto; }
+#stage.zoomed { cursor: grab; }
+#stage.panning, #stage.panning #cv { cursor: grabbing !important; }
+#cv { margin: auto; flex: none; touch-action: none; border-radius: 4px; box-shadow: 0 1px 6px rgba(0,0,0,.25);
   background: repeating-conic-gradient(#cfd4dc 0 25%, #e6e9ef 0 50%) 0 0/16px 16px; }
-#player { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-#fi { font-variant-numeric: tabular-nums; min-width: 12ch; }
-#ginfo { font-variant-numeric: tabular-nums; }
-.spd { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+#cv.px { image-rendering: pixelated; }
+/* dica por cima da imagem, embaixo e no meio; não atrapalha o mouse */
+.hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); max-width: calc(100% - 28px); pointer-events: none;
+  background: rgba(28,36,51,.86); color: #fff; border-radius: 999px; padding: 7px 16px; font-size: 15px; font-weight: 500; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.2); }
+#player { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+#player .btn { min-height: 38px; padding: 4px 12px; }
+#prev, #next { width: 42px; padding: 0 !important; }
+#fi { font-variant-numeric: tabular-nums; min-width: 12ch; margin: 0 4px; }
+.zoom { display: inline-flex; gap: 4px; align-items: center; margin-left: auto; }
+.btn.sq { width: 38px; padding: 0 !important; font-size: 20px; font-weight: 600; }
+#zlv { min-width: 4.2ch; text-align: center; font-variant-numeric: tabular-nums; font-size: 14px; }
+/* uma linha só (a imagem não muda de tamanho quando chega uma mensagem); texto longo termina em … e aparece inteiro ao passar o mouse */
+#status { display: flex; gap: 16px; align-items: baseline; font-size: 14px; min-height: 1.45em; white-space: nowrap; }
+#msg { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+#ginfo { flex: none; font-variant-numeric: tabular-nums; }
+#msg { transition: opacity .6s; }
+#msg.ok { color: var(--ok-d); font-weight: 600; }
+#msg.err { color: var(--red); font-weight: 600; }
+.dirty { width: 10px; height: 10px; border-radius: 50%; background: #ffc247; box-shadow: 0 0 0 2px rgba(255,255,255,.7); flex: none; }   /* bolinha amarela no Salvar = há alterações não salvas */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.spd { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.spd select { min-height: 38px; padding: 4px 8px; }
 
 #tools { grid-area: tools; min-height: 0; overflow-y: auto; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .q { font-weight: 700; font-size: 17px; margin-bottom: 8px; }
@@ -116,8 +142,11 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 
 /* linha do tempo */
 #timeline { grid-area: timeline; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px 4px; min-width: 0; }
-#tlh { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding-bottom: 6px; }
-#tlh label { display: flex; gap: 8px; align-items: center; }
+#tlh { display: flex; gap: 6px 14px; align-items: center; flex-wrap: wrap; padding-bottom: 6px; }
+#tinfo { font-size: 15px; }
+#tlh .tsz { display: flex; gap: 4px; align-items: center; margin-left: auto; font-size: 14px; }
+.tsz input { width: 90px; }
+.tsz .big2 { font-size: 20px; line-height: 1; }
 #tl { overflow-x: auto; overflow-y: hidden; padding: 2px 0 8px; }
 #strip { display: flex; gap: 4px; width: max-content; min-width: 100%; }
 .cell { position: relative; flex: none; padding: 4px 4px 0; border-radius: 8px; border: 3px solid transparent; background: #eef1f6; cursor: pointer; user-select: none; -webkit-user-select: none; }
@@ -125,26 +154,18 @@ kbd { font: 13px ui-monospace, Consolas, monospace; background: #eef1f6; border:
 .cell i { display: block; font-style: normal; font-size: 12px; text-align: center; color: var(--dim); padding: 3px 0; font-variant-numeric: tabular-nums; }
 .cell b { position: absolute; left: 6px; right: 6px; bottom: 22px; height: 5px; background: #f59314; border-radius: 3px; display: none; }
 .cell.bl b { display: block; }
-/* caixinha de marcar: sempre visível; clicar nela marca/desmarca só aquele frame */
-.cell .ck { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,.92); color: transparent; border: 2px solid #7d8799; font-size: 14px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 1px rgba(255,255,255,.8); }
+/* caixinha de marcar: sempre visível; clicar nela marca/desmarca só aquele frame (menor quando as miniaturas são pequenas) */
+.cell .ck { position: absolute; top: 5px; left: 5px; width: clamp(17px, calc(var(--th) * .3), 24px); height: clamp(17px, calc(var(--th) * .3), 24px); border-radius: 50%; background: rgba(255,255,255,.92); color: transparent; border: 2px solid #7d8799; font-size: 14px; font-weight: 700; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 1px rgba(255,255,255,.8); }
 .cell .ck:hover { border-color: var(--acc); background: #fff; }
 .cell.sel { background: var(--acc-bg); border-color: var(--acc); }
 .cell.sel .ck { background: var(--acc); border-color: #fff; color: #fff; box-shadow: 0 0 0 2px var(--acc); }
-#seltools { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 0 8px; }
-#seltools .rng { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; color: var(--dim); }
-#seltools input[type=number] { font: inherit; width: 68px; min-height: 34px; padding: 4px 8px; border: 1px solid #aeb7c6; border-radius: 8px; background: #fff; color: var(--fg); }
+#seltools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+#seltools .rng { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; color: var(--dim); font-size: 14px; }
+#seltools input[type=number] { font: inherit; font-size: 14px; width: 52px; min-height: 34px; padding: 4px 8px; border: 1px solid #aeb7c6; border-radius: 8px; background: #fff; color: var(--fg); }
 .btn.sm { min-height: 34px; padding: 4px 11px; font-size: 14px; border-radius: 8px; }
 .cell.cur { border-color: #1c2433; }
 .cell.cur.sel { border-color: var(--acc-d); }
 .cell.cur i { color: var(--fg); font-weight: 700; }
-
-/* rodapé */
-#bottom { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 20px max(10px, env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid var(--line); flex-wrap: wrap; }
-#bottom .left, #bottom .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-#msg { padding-left: 8px; transition: opacity .6s; max-width: 60ch; }
-#msg.ok { color: var(--ok-d); font-weight: 600; }
-#msg.err { color: var(--red); font-weight: 600; }
-.dirty { color: #a35a00; font-weight: 600; }
 
 /* gravar a tela */
 .reddot { color: #d32f2f; }
@@ -203,18 +224,18 @@ dialog td:first-child { white-space: nowrap; }
   .priv, .sub { font-size: 14px; }
   #editor { padding: 8px 16px; gap: 8px; }
   #viewer { gap: 6px; }
-  .hint { padding: 6px 12px; font-size: 15px; border-radius: 8px; }
-  #stage { min-height: 240px; padding: 6px; }
+  #stagew { min-height: 220px; }
+  #stage { padding: 6px; }
+  #player .btn, .spd select { min-height: 34px; }
+  #prev, #next, .btn.sq { width: 36px; }
   #timeline { padding: 6px 10px 2px; }
-  #tlh { padding-bottom: 2px; }
-  #seltools { gap: 4px; padding-bottom: 4px; }
+  #tlh { padding-bottom: 4px; }
   #seltools .rng { margin-left: 4px; }
   .btn.sm { min-height: 30px; padding: 2px 9px; font-size: 13px; }
   #seltools input[type=number] { min-height: 30px; padding: 2px 6px; width: 60px; }
   #tl { padding: 2px 0 4px; }
   .cell i { padding: 1px 0; }
   #tools { padding: 10px; }
-  .q { margin-bottom: 6px; font-size: 16px; }
   #tabs { margin-bottom: 8px; gap: 6px; }
   .tab { min-height: 42px; }
   .step { margin: 8px 0 6px; }
@@ -234,16 +255,13 @@ dialog td:first-child { white-space: nowrap; }
   .radios label:has(input:focus-visible) { outline: 3px solid #7fb0ff; outline-offset: 1px; }
   .radios label:has(input:disabled) input { cursor: default; }
   .actions { bottom: -10px; }
-  #bottom { padding: 6px 16px; }
-  #bottom .btn.big { min-height: 42px; }
 }
 
 /* janela muito baixa (ex.: Full HD com escala 150%, ~600 px de altura): some a faixa de dica (os passos do painel dizem o mesmo) e os frames ficam menores */
 @media (max-height: 650px) {
   :root { --th: 46px; --edmin: 480px; }
-  .hint { display: none; }
-  .q { display: none; }
-  #stage { min-height: 200px; }
+  #stagew { min-height: 180px; }
+  #tools .step { font-size: 14px; line-height: 1.35; }
 }
 
 /* telas menores: tudo empilhado e a página rola */
@@ -251,18 +269,18 @@ dialog td:first-child { white-space: nowrap; }
   body { height: auto; min-height: 100%; }
   html { height: auto; }
   #editor { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "viewer" "tools" "timeline"; padding: 10px 12px; }
-  #stage { min-height: 220px; }
-  #cv { max-height: 60vh; }
+  #stagew { min-height: 220px; }
+  #stage { max-height: calc(60vh + 16px); }
   #tools { overflow: visible; }
-  #top { padding: 10px 12px; }
-  #bottom { position: sticky; bottom: 0; padding-left: 12px; padding-right: 12px; }
+  /* topo fixo: Desfazer/Refazer/Salvar sempre à mão enquanto a página rola */
+  #top { padding: 8px 12px; position: sticky; top: 0; z-index: 5; }
+  body.ed .brand { display: none; }
+  .top-actions { justify-content: flex-start; }
+  .edacts { border-left: 0; padding-left: 0; margin-left: 0; flex: 1 1 100%; }
+  #exp { flex: 1; }
   .card { padding: 26px 20px; }
-  .spd { margin-left: 0; }
+  .zoom { margin-left: 0; }
   .actions { position: static; box-shadow: none; }
-  #bottom { gap: 8px; }
-  #bottom .left, #bottom .right { display: contents; }
-  #undo, #redo { flex: none; padding: 9px 12px; }
-  #exp { flex: 1; order: 1; }
-  #msg { order: 3; flex: 1 0 100%; padding-left: 0; font-size: 14px; max-width: none; }
-  .dirty { order: 2; flex: 1 0 100%; font-size: 14px; }
+  #status { flex-wrap: wrap; white-space: normal; gap: 2px 16px; }
+  #msg { flex-basis: 100%; }
 }
